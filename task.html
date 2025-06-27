@@ -152,7 +152,6 @@
         <div class="col-md-3">
           <div class="input-group">
             <select id="taskCategory" class="form-select"></select>
-            <button class="btn btn-outline-light" type="button" onclick="createCategory()">➕</button>
           </div>
         </div>
         <div class="col-md-1">
@@ -291,6 +290,7 @@
     }
 
     function updateCategoryDropdown() {
+      // Update sidebar list
       const list = document.getElementById("categoryList");
       list.innerHTML = categories.map((cat, idx) => `
         <div class="category-tag d-flex justify-content-between align-items-center">
@@ -300,6 +300,12 @@
           </div>
           ${cat.name !== "General" ? `<button class="btn btn-sm btn-outline-danger ms-2 py-0 px-2" onclick="deleteCategory(${idx})">🗑️</button>` : ""}
         </div>
+      `).join("");
+
+      // ✅ Update dropdown list
+      const dropdown = document.getElementById("taskCategory");
+      dropdown.innerHTML = categories.map(cat => `
+        <option value="${cat.name}">${cat.name}</option>
       `).join("");
     }
 
@@ -318,25 +324,6 @@
       e.target.reset();
     }
 
-    function createCategory() {
-      const name = prompt("Enter category name:");
-      if (!name) return;
-
-      const colorInput = document.createElement("input");
-      colorInput.type = "color";
-      colorInput.value = "#00bfa5";
-      colorInput.style.position = "fixed";
-      colorInput.style.left = "-1000px";
-      document.body.appendChild(colorInput);
-      colorInput.click();
-      colorInput.addEventListener("input", () => {
-        const color = colorInput.value;
-        categories.push({ name, color });
-        saveCategories();
-        updateCategoryDropdown();
-        document.body.removeChild(colorInput);
-      });
-    }
 
     new Sortable(document.getElementById('taskList'), {
       animation: 150,
