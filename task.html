@@ -7,11 +7,12 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
       padding: 20px;
+      background: #f9f9f9;
     }
-    h1, h2 {
+    h1 {
       text-align: center;
     }
     #currentTime {
@@ -24,16 +25,25 @@
       padding: 0;
     }
     li {
-      background: #f0f0f0;
+      background: #e0f7fa;
       margin: 10px 0;
-      padding: 10px;
-      border-radius: 5px;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     button {
       display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
+      margin: 30px auto 0;
+      padding: 12px 24px;
       font-size: 1em;
+      background: #00796b;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #004d40;
     }
   </style>
 </head>
@@ -46,15 +56,14 @@
   <button onclick="addTask()">Add Task</button>
 
   <script>
-    const taskList = [];
+    let taskList = JSON.parse(localStorage.getItem("taskList")) || [];
 
     function updateCurrentTime() {
       const now = new Date();
-      document.getElementById("currentTime").innerText = now.toLocaleTimeString();
+      const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById("currentTime").innerText = formattedTime;
+      renderTasks();
     }
-
-    setInterval(updateCurrentTime, 1000);
-    updateCurrentTime();
 
     function renderTasks() {
       const ul = document.getElementById("taskList");
@@ -64,7 +73,7 @@
       taskList.forEach((task, index) => {
         const endTime = new Date(startTime.getTime() + task.duration * 60000);
         const li = document.createElement("li");
-        li.textContent = `${index + 1}. ${task.name} - Start: ${startTime.toLocaleTimeString()} - End: ${endTime.toLocaleTimeString()}`;
+        li.textContent = `${index + 1}. ${task.name} — Start: ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — End: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         ul.appendChild(li);
         startTime = endTime;
       });
@@ -78,8 +87,12 @@
       if (isNaN(duration) || duration <= 0) return alert("Invalid duration.");
 
       taskList.push({ name, duration });
+      localStorage.setItem("taskList", JSON.stringify(taskList));
       renderTasks();
     }
+
+    setInterval(updateCurrentTime, 1000);
+    updateCurrentTime();
   </script>
 </body>
 </html>
