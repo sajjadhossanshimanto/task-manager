@@ -215,6 +215,44 @@
         const timeSpan = document.createElement("span");
         timeSpan.className = "task-time";
 
+        timeSpan.ondblclick = () => {
+          if (task.completed) return; // No edit if completed
+
+          // Create input element
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "1";
+          input.value = task.duration;
+          input.style.width = "60px";
+          input.style.fontSize = "0.85em";
+
+          // Replace timeSpan content with input
+          timeSpan.textContent = "";
+          timeSpan.appendChild(input);
+          input.focus();
+
+          // Save changes on Enter or blur
+          function saveDuration() {
+            const newDuration = parseInt(input.value);
+            if (!isNaN(newDuration) && newDuration > 0) {
+              task.duration = newDuration;
+              saveTasks();
+              renderTasks();
+            } else {
+              renderTasks(); // revert on invalid input
+            }
+          }
+
+          input.addEventListener("blur", saveDuration);
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              input.blur();
+            } else if (e.key === "Escape") {
+              renderTasks(); // cancel edit
+            }
+          });
+        };
+
         if (!task.completed) {
           // Calculate hours and minutes from duration (minutes)
           const hours = Math.floor(task.duration / 60);
