@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Task Manager</title>
   <style>
     :root {
@@ -15,25 +15,29 @@
     }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       max-width: 600px;
       margin: auto;
       padding: 20px;
       background: var(--bg-color);
       color: var(--text-color);
+      user-select: none; /* Prevent accidental text selection while dragging */
     }
     h1 {
       text-align: center;
       color: var(--accent-color);
+      user-select: none;
     }
     #currentTime {
       font-size: 1.5em;
       text-align: center;
       margin-bottom: 20px;
+      user-select: none;
     }
     ul {
       list-style: none;
       padding: 0;
+      margin: 0;
     }
     li {
       background: var(--card-color);
@@ -44,6 +48,10 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      cursor: grab;
+    }
+    li:active {
+      cursor: grabbing;
     }
     li.completed {
       text-decoration: line-through;
@@ -61,6 +69,7 @@
       border-radius: 5px;
       cursor: pointer;
       transition: background 0.3s;
+      user-select: none;
     }
     button:hover {
       background: #008e76;
@@ -69,9 +78,10 @@
       background: none;
       color: var(--danger-color);
       border: none;
-      font-size: 1.2em;
+      font-size: 1.3em;
       cursor: pointer;
       margin-left: 10px;
+      user-select: none;
     }
     .delete-btn:hover {
       color: #e53935;
@@ -83,13 +93,20 @@
       align-items: center;
       padding: 0 10px;
       width: 100%;
+      user-select: none;
     }
     .task-name {
       font-weight: bold;
+      overflow-wrap: break-word;
+      user-select: text;
     }
     .task-time {
       font-size: 0.9em;
       color: #ccc;
+      white-space: nowrap;
+      user-select: none;
+      min-width: 150px;
+      text-align: right;
     }
     .form-popup-overlay {
       position: fixed;
@@ -102,6 +119,7 @@
       align-items: center;
       justify-content: center;
       z-index: 999;
+      user-select: none;
     }
     .form-popup {
       background: #1e1e1e;
@@ -109,7 +127,8 @@
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.8);
       color: #fff;
-      width: 300px;
+      width: 320px;
+      user-select: text;
     }
     .form-popup label {
       display: block;
@@ -124,10 +143,20 @@
       border: 1px solid #444;
       background: #333;
       color: #fff;
+      font-size: 1em;
     }
     .form-popup button {
       width: 100%;
       background: var(--accent-color);
+      font-size: 1em;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .form-popup button:hover {
+      background: #008e76;
     }
   </style>
 </head>
@@ -137,9 +166,13 @@
   <ul id="taskList"></ul>
   <button onclick="addTask()">Add Task</button>
 
+  <!-- SortableJS library from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
   <script>
     let taskList = JSON.parse(localStorage.getItem("taskList")) || [];
 
+    // Update current time and rerender tasks every minute
     function updateCurrentTime() {
       const now = new Date();
       const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -147,6 +180,7 @@
       renderTasks();
     }
 
+    // Render all tasks
     function renderTasks() {
       const ul = document.getElementById("taskList");
       ul.innerHTML = "";
@@ -155,23 +189,29 @@
       taskList.forEach((task, index) => {
         const li = document.createElement("li");
         li.className = task.completed ? "completed" : "";
+        li.setAttribute('data-id', index); // For drag-and-drop reference
 
+        // Checkbox
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = task.completed;
+        checkbox.setAttribute('aria-label', 'Mark task as complete');
         checkbox.onchange = () => {
           task.completed = checkbox.checked;
-          localStorage.setItem("taskList", JSON.stringify(taskList));
+          saveTasks();
           renderTasks();
         };
 
+        // Task name + time container
         const textSpan = document.createElement("span");
         textSpan.className = "task-text";
 
+        // Task name on left
         const nameSpan = document.createElement("span");
         nameSpan.className = "task-name";
         nameSpan.textContent = task.name;
 
+        // Time info on right
         const timeSpan = document.createElement("span");
         timeSpan.className = "task-time";
 
@@ -186,12 +226,14 @@
         textSpan.appendChild(nameSpan);
         textSpan.appendChild(timeSpan);
 
+        // Delete button with trash icon
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
         deleteBtn.innerHTML = "🗑️";
+        deleteBtn.setAttribute('aria-label', 'Delete task');
         deleteBtn.onclick = () => {
           taskList.splice(index, 1);
-          localStorage.setItem("taskList", JSON.stringify(taskList));
+          saveTasks();
           renderTasks();
         };
 
@@ -202,6 +244,12 @@
       });
     }
 
+    // Save tasks to localStorage
+    function saveTasks() {
+      localStorage.setItem("taskList", JSON.stringify(taskList));
+    }
+
+    // Add task modal popup
     function addTask() {
       const overlay = document.createElement("div");
       overlay.className = "form-popup-overlay";
@@ -210,48 +258,73 @@
       form.className = "form-popup";
       form.innerHTML = `
         <label for="taskName">Task Name</label>
-        <input type="text" id="taskName" required>
+        <input type="text" id="taskName" autocomplete="off" required>
         <label for="taskDuration">Duration (minutes)</label>
-        <input type="number" id="taskDuration" required>
+        <input type="number" id="taskDuration" min="1" required>
         <button type="submit">Add Task</button>
       `;
 
       overlay.appendChild(form);
       document.body.appendChild(overlay);
+      form.querySelector('#taskName').focus();
 
       form.onsubmit = function(e) {
         e.preventDefault();
-        const name = form.querySelector('#taskName').value;
+        const name = form.querySelector('#taskName').value.trim();
         const duration = parseInt(form.querySelector('#taskDuration').value);
         if (!name || isNaN(duration) || duration <= 0) {
-          alert("Invalid input");
+          alert("Please enter a valid task name and duration (minutes).");
           return;
         }
         taskList.push({ name, duration, completed: false });
-        localStorage.setItem("taskList", JSON.stringify(taskList));
+        saveTasks();
         document.body.removeChild(overlay);
         renderTasks();
       };
 
-      // Cancel on ESC
-      document.addEventListener('keydown', function escHandler(e) {
-        if (e.key === 'Escape') {
+      function closePopup() {
+        if (document.body.contains(overlay)) {
           document.body.removeChild(overlay);
-          document.removeEventListener('keydown', escHandler);
         }
-      });
+        document.removeEventListener('keydown', escHandler);
+        overlay.removeEventListener('click', outsideClickHandler);
+      }
 
-      // Cancel on outside click
-      overlay.addEventListener('click', function outsideClickHandler(e) {
-        if (e.target === overlay) {
-          document.body.removeChild(overlay);
-          document.removeEventListener('keydown', escHandler);
-        }
-      });
+      function escHandler(e) {
+        if (e.key === 'Escape') closePopup();
+      }
+
+      function outsideClickHandler(e) {
+        if (e.target === overlay) closePopup();
+      }
+
+      document.addEventListener('keydown', escHandler);
+      overlay.addEventListener('click', outsideClickHandler);
     }
 
-    setInterval(updateCurrentTime, 60000);
+    // Initialize SortableJS on the task list for drag-and-drop reordering
+    const sortable = new Sortable(document.getElementById('taskList'), {
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      delay: 300, // 300ms press-and-hold delay for drag start
+      delayOnTouchOnly: true, // only delay on touch devices
+      onEnd: (evt) => {
+        // Update taskList array order based on DOM reorder
+        const newOrder = [];
+        const items = document.querySelectorAll('#taskList li');
+        items.forEach(item => {
+          const idx = parseInt(item.getAttribute('data-id'));
+          newOrder.push(taskList[idx]);
+        });
+        taskList = newOrder;
+        saveTasks();
+        renderTasks();
+      }
+    });
+
+    // Run initial render and start clock
     updateCurrentTime();
+    setInterval(updateCurrentTime, 60000);
   </script>
 </body>
 </html>
