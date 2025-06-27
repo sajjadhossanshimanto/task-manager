@@ -30,6 +30,13 @@
       padding: 15px;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    li.completed {
+      text-decoration: line-through;
+      background: #cfd8dc;
     }
     button {
       display: block;
@@ -44,6 +51,10 @@
     }
     button:hover {
       background: #004d40;
+    }
+    .task-text {
+      flex-grow: 1;
+      padding: 0 10px;
     }
   </style>
 </head>
@@ -71,24 +82,64 @@
 
       let startTime = new Date();
       taskList.forEach((task, index) => {
-        const endTime = new Date(startTime.getTime() + task.duration * 60000);
         const li = document.createElement("li");
-        li.textContent = `${index + 1}. ${task.name} — Start: ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — End: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        li.className = task.completed ? "completed" : "";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.completed;
+        checkbox.onchange = () => {
+          task.completed = checkbox.checked;
+          localStorage.setItem("taskList", JSON.stringify(taskList));
+          renderTasks();
+        };
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "task-text";
+
+        if (!task.completed) {
+          const endTime = new Date(startTime.getTime() + task.duration * 60000);
+          textSpan.textContent = `${task.name} — Start: ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — End: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+          startTime = endTime;
+        } else {
+          textSpan.textContent = `${task.name} — Completed`;
+        }
+
+        li.appendChild(checkbox);
+        li.appendChild(textSpan);
         ul.appendChild(li);
-        startTime = endTime;
       });
     }
 
     function addTask() {
-      const name = prompt("Enter task name:");
-      if (!name) return;
-      const durationStr = prompt("Enter task duration (in minutes):");
-      const duration = parseInt(durationStr);
-      if (isNaN(duration) || duration <= 0) return alert("Invalid duration.");
-
-      taskList.push({ name, duration });
-      localStorage.setItem("taskList", JSON.stringify(taskList));
-      renderTasks();
+      const form = document.createElement("form");
+      form.innerHTML = `
+        <label>Task Name: <input type="text" id="taskName" required></label><br><br>
+        <label>Duration (minutes): <input type="number" id="taskDuration" required></label><br><br>
+        <button type="submit">Add</button>
+      `;
+      form.onsubmit = function(e) {
+        e.preventDefault();
+        const name = form.querySelector('#taskName').value;
+        const duration = parseInt(form.querySelector('#taskDuration').value);
+        if (!name || isNaN(duration) || duration <= 0) {
+          alert("Invalid input");
+          return;
+        }
+        taskList.push({ name, duration, completed: false });
+        localStorage.setItem("taskList", JSON.stringify(taskList));
+        document.body.removeChild(form);
+        renderTasks();
+      };
+      form.style.position = 'fixed';
+      form.style.top = '50%';
+      form.style.left = '50%';
+      form.style.transform = 'translate(-50%, -50%)';
+      form.style.background = '#fff';
+      form.style.padding = '20px';
+      form.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
+      form.style.zIndex = '1000';
+      document.body.appendChild(form);
     }
 
     setInterval(updateCurrentTime, 1000);
