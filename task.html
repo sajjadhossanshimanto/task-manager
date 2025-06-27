@@ -68,17 +68,25 @@
       flex-grow: 1;
       padding: 0 10px;
     }
-    .form-popup {
+    .form-popup-overlay {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .form-popup {
       background: #1e1e1e;
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-      z-index: 1000;
       color: #fff;
+      width: 300px;
     }
     .form-popup label {
       display: block;
@@ -152,6 +160,9 @@
     }
 
     function addTask() {
+      const overlay = document.createElement("div");
+      overlay.className = "form-popup-overlay";
+
       const form = document.createElement("form");
       form.className = "form-popup";
       form.innerHTML = `
@@ -161,6 +172,9 @@
         <input type="number" id="taskDuration" required>
         <button type="submit">Add Task</button>
       `;
+
+      overlay.appendChild(form);
+      document.body.appendChild(overlay);
 
       form.onsubmit = function(e) {
         e.preventDefault();
@@ -172,11 +186,25 @@
         }
         taskList.push({ name, duration, completed: false });
         localStorage.setItem("taskList", JSON.stringify(taskList));
-        document.body.removeChild(form);
+        document.body.removeChild(overlay);
         renderTasks();
       };
 
-      document.body.appendChild(form);
+      // Cancel on ESC
+      document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') {
+          document.body.removeChild(overlay);
+          document.removeEventListener('keydown', escHandler);
+        }
+      });
+
+      // Cancel on outside click
+      overlay.addEventListener('click', function outsideClickHandler(e) {
+        if (e.target === overlay) {
+          document.body.removeChild(overlay);
+          document.removeEventListener('keydown', escHandler);
+        }
+      });
     }
 
     setInterval(updateCurrentTime, 60000); // update every minute
