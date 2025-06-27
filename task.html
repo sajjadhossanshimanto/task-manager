@@ -123,6 +123,17 @@
       border-radius: 50%;
       margin-right: 10px;
     }
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      cursor: pointer;
+    }
+    .color-swatch.selected {
+      outline: 2px solid var(--accent-color);
+    }
+
   </style>
 </head>
 <body>
@@ -154,6 +165,21 @@
 
     <div class="category-column">
       <div class="category-list" id="categoryList"></div>
+      <hr class="text-secondary" />
+      <form id="categoryForm" class="mt-3">
+        <div class="mb-2">
+          <input type="text" id="newCategoryName" class="form-control" placeholder="New Category Name" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label d-block mb-1">Choose Color:</label>
+          <div id="colorPalette" class="d-flex flex-wrap gap-2">
+            <!-- Color options rendered by JS -->
+          </div>
+          <input type="color" id="customColor" class="form-control form-control-color mt-2" title="Pick a custom color">
+        </div>
+        <button type="submit" class="btn btn-outline-light w-100">Create Category</button>
+      </form>
+
     </div>
   </div>
 
@@ -319,6 +345,52 @@
         renderTasks();
       }
     });
+
+    const paletteColors = ["#00bfa5", "#e91e63", "#ffc107", "#3f51b5", "#8bc34a", "#ff5722", "#9c27b0"];
+    let selectedColor = paletteColors[0];
+
+    function renderColorPalette() {
+      const container = document.getElementById("colorPalette");
+      container.innerHTML = "";
+      paletteColors.forEach(color => {
+        const swatch = document.createElement("div");
+        swatch.className = "color-swatch";
+        swatch.style.backgroundColor = color;
+        if (color === selectedColor) swatch.classList.add("selected");
+        swatch.onclick = () => {
+          selectedColor = color;
+          renderColorPalette();
+        };
+        container.appendChild(swatch);
+      });
+
+      const custom = document.getElementById("customColor");
+      custom.value = selectedColor;
+      custom.onchange = () => {
+        selectedColor = custom.value;
+        renderColorPalette();
+      };
+    }
+
+    document.getElementById("categoryForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const nameInput = document.getElementById("newCategoryName");
+      const name = nameInput.value.trim();
+      if (!name) return;
+
+      if (categories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
+        alert("Category already exists!");
+        return;
+      }
+
+      categories.push({ name, color: selectedColor });
+      saveCategories();
+      updateCategoryDropdown();
+      nameInput.value = "";
+    });
+
+    renderColorPalette();
+
 
     updateCurrentTime();
     setInterval(updateCurrentTime, 60000);
