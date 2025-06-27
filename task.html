@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    #currentTime {
+      font-size: 1.5em;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #f0f0f0;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Task Manager</h1>
+  <div id="currentTime"></div>
+
+  <ul id="taskList"></ul>
+
+  <button onclick="addTask()">Add Task</button>
+
+  <script>
+    const taskList = [];
+
+    function updateCurrentTime() {
+      const now = new Date();
+      document.getElementById("currentTime").innerText = now.toLocaleTimeString();
+    }
+
+    setInterval(updateCurrentTime, 1000);
+    updateCurrentTime();
+
+    function renderTasks() {
+      const ul = document.getElementById("taskList");
+      ul.innerHTML = "";
+
+      let startTime = new Date();
+      taskList.forEach((task, index) => {
+        const endTime = new Date(startTime.getTime() + task.duration * 60000);
+        const li = document.createElement("li");
+        li.textContent = `${index + 1}. ${task.name} - Start: ${startTime.toLocaleTimeString()} - End: ${endTime.toLocaleTimeString()}`;
+        ul.appendChild(li);
+        startTime = endTime;
+      });
+    }
+
+    function addTask() {
+      const name = prompt("Enter task name:");
+      if (!name) return;
+      const durationStr = prompt("Enter task duration (in minutes):");
+      const duration = parseInt(durationStr);
+      if (isNaN(duration) || duration <= 0) return alert("Invalid duration.");
+
+      taskList.push({ name, duration });
+      renderTasks();
+    }
+  </script>
+</body>
+</html>
