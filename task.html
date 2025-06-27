@@ -291,14 +291,16 @@
     }
 
     function updateCategoryDropdown() {
-      const select = document.getElementById("taskCategory");
-      select.innerHTML = categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join("");
       const list = document.getElementById("categoryList");
-      list.innerHTML = categories.map(cat => `
-        <div class="category-tag">
-          <div class="category-color" style="background:${cat.color}"></div>
-          <span>${cat.name}</span>
-        </div>`).join("");
+      list.innerHTML = categories.map((cat, idx) => `
+        <div class="category-tag d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center">
+            <div class="category-color" style="background:${cat.color}"></div>
+            <span>${cat.name}</span>
+          </div>
+          ${cat.name !== "General" ? `<button class="btn btn-sm btn-outline-danger ms-2 py-0 px-2" onclick="deleteCategory(${idx})">🗑️</button>` : ""}
+        </div>
+      `).join("");
     }
 
     function handleTaskForm(e) {
@@ -388,6 +390,22 @@
       updateCategoryDropdown();
       nameInput.value = "";
     });
+    function deleteCategory(index) {
+      const catToDelete = categories[index].name;
+
+      const used = taskList.some(task => task.category === catToDelete);
+      if (used) {
+        alert("This category is used in tasks. Please reassign or delete those tasks first.");
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to delete category "${catToDelete}"?`)) return;
+
+      categories.splice(index, 1);
+      saveCategories();
+      updateCategoryDropdown();
+    }
+
 
     renderColorPalette();
 
