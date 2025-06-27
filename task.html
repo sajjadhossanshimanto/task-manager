@@ -11,6 +11,7 @@
       --card-color: #1e1e1e;
       --accent-color: #00bfa5;
       --completed-color: #555;
+      --danger-color: #ff5252;
     }
 
     body {
@@ -63,6 +64,18 @@
     }
     button:hover {
       background: #008e76;
+    }
+    .delete-btn {
+      background: var(--danger-color);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    .delete-btn:hover {
+      background: #e53935;
     }
     .task-text {
       flex-grow: 1;
@@ -129,7 +142,7 @@
       ul.innerHTML = "";
       let startTime = new Date();
 
-      taskList.forEach((task) => {
+      taskList.forEach((task, index) => {
         const li = document.createElement("li");
         li.className = task.completed ? "completed" : "";
 
@@ -153,8 +166,18 @@
           textSpan.textContent = `${task.name} — Completed`;
         }
 
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.onclick = () => {
+          taskList.splice(index, 1);
+          localStorage.setItem("taskList", JSON.stringify(taskList));
+          renderTasks();
+        };
+
         li.appendChild(checkbox);
         li.appendChild(textSpan);
+        li.appendChild(deleteBtn);
         ul.appendChild(li);
       });
     }
