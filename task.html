@@ -30,6 +30,7 @@
       gap: 2rem;
       width: 100%;
       max-width: 1000px;
+      margin-top: 1rem;
     }
     .task-column {
       flex: 2;
@@ -37,9 +38,14 @@
     .category-column {
       flex: 1;
     }
-    h1, #currentTime {
+    h1 {
       text-align: center;
       color: var(--accent-color);
+    }
+    #currentTime {
+      font-size: 1.2rem;
+      color: #ccc;
+      margin-bottom: 1rem;
     }
     ul {
       list-style: none;
@@ -55,7 +61,7 @@
       align-items: center;
       justify-content: space-between;
       cursor: grab;
-      height: 48px;
+      height: 42px;
     }
     li.completed {
       text-decoration: line-through;
@@ -93,6 +99,7 @@
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      margin-top: 1rem;
     }
     .form-inline input,
     .form-inline select {
@@ -124,7 +131,7 @@
 
   <div class="container-box">
     <div class="task-column">
-      <form class="form-inline row g-2 mb-4" onsubmit="handleTaskForm(event)">
+      <form class="form-inline row g-2" onsubmit="handleTaskForm(event)">
         <div class="col-md-5">
           <input type="text" id="taskName" class="form-control" placeholder="Task Name" required />
         </div>
@@ -286,14 +293,21 @@
     function createCategory() {
       const name = prompt("Enter category name:");
       if (!name) return;
-      const color = prompt("Enter color hex (e.g., #ff5722):", "#");
-      if (!/^#([0-9A-Fa-f]{3}){1,2}$/.test(color)) {
-        alert("Invalid color");
-        return;
-      }
-      categories.push({ name, color });
-      saveCategories();
-      updateCategoryDropdown();
+
+      const colorInput = document.createElement("input");
+      colorInput.type = "color";
+      colorInput.value = "#00bfa5";
+      colorInput.style.position = "fixed";
+      colorInput.style.left = "-1000px";
+      document.body.appendChild(colorInput);
+      colorInput.click();
+      colorInput.addEventListener("input", () => {
+        const color = colorInput.value;
+        categories.push({ name, color });
+        saveCategories();
+        updateCategoryDropdown();
+        document.body.removeChild(colorInput);
+      });
     }
 
     new Sortable(document.getElementById('taskList'), {
