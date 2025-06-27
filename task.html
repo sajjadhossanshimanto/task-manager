@@ -5,15 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Task Manager</title>
   <style>
+    :root {
+      --bg-color: #121212;
+      --text-color: #ffffff;
+      --card-color: #1e1e1e;
+      --accent-color: #00bfa5;
+      --completed-color: #555;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       max-width: 600px;
       margin: auto;
       padding: 20px;
-      background: #f9f9f9;
+      background: var(--bg-color);
+      color: var(--text-color);
     }
     h1 {
       text-align: center;
+      color: var(--accent-color);
     }
     #currentTime {
       font-size: 1.5em;
@@ -25,45 +35,75 @@
       padding: 0;
     }
     li {
-      background: #e0f7fa;
+      background: var(--card-color);
       margin: 10px 0;
       padding: 15px;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
     li.completed {
       text-decoration: line-through;
-      background: #cfd8dc;
+      background: var(--completed-color);
+      color: #aaa;
     }
     button {
       display: block;
       margin: 30px auto 0;
       padding: 12px 24px;
       font-size: 1em;
-      background: #00796b;
+      background: var(--accent-color);
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      transition: background 0.3s;
     }
     button:hover {
-      background: #004d40;
+      background: #008e76;
     }
     .task-text {
       flex-grow: 1;
       padding: 0 10px;
+    }
+    .form-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+      z-index: 1000;
+      color: #fff;
+    }
+    .form-popup label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .form-popup input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      border: 1px solid #444;
+      background: #333;
+      color: #fff;
+    }
+    .form-popup button {
+      width: 100%;
+      background: var(--accent-color);
     }
   </style>
 </head>
 <body>
   <h1>Task Manager</h1>
   <div id="currentTime"></div>
-
   <ul id="taskList"></ul>
-
   <button onclick="addTask()">Add Task</button>
 
   <script>
@@ -79,9 +119,9 @@
     function renderTasks() {
       const ul = document.getElementById("taskList");
       ul.innerHTML = "";
-
       let startTime = new Date();
-      taskList.forEach((task, index) => {
+
+      taskList.forEach((task) => {
         const li = document.createElement("li");
         li.className = task.completed ? "completed" : "";
 
@@ -113,11 +153,15 @@
 
     function addTask() {
       const form = document.createElement("form");
+      form.className = "form-popup";
       form.innerHTML = `
-        <label>Task Name: <input type="text" id="taskName" required></label><br><br>
-        <label>Duration (minutes): <input type="number" id="taskDuration" required></label><br><br>
-        <button type="submit">Add</button>
+        <label for="taskName">Task Name</label>
+        <input type="text" id="taskName" required>
+        <label for="taskDuration">Duration (minutes)</label>
+        <input type="number" id="taskDuration" required>
+        <button type="submit">Add Task</button>
       `;
+
       form.onsubmit = function(e) {
         e.preventDefault();
         const name = form.querySelector('#taskName').value;
@@ -131,18 +175,11 @@
         document.body.removeChild(form);
         renderTasks();
       };
-      form.style.position = 'fixed';
-      form.style.top = '50%';
-      form.style.left = '50%';
-      form.style.transform = 'translate(-50%, -50%)';
-      form.style.background = '#fff';
-      form.style.padding = '20px';
-      form.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
-      form.style.zIndex = '1000';
+
       document.body.appendChild(form);
     }
 
-    setInterval(updateCurrentTime, 1000);
+    setInterval(updateCurrentTime, 60000); // update every minute
     updateCurrentTime();
   </script>
 </body>
