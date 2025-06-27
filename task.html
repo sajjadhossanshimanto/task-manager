@@ -216,8 +216,12 @@
         timeSpan.className = "task-time";
 
         if (!task.completed) {
+          // Calculate hours and minutes from duration (minutes)
+          const hours = Math.floor(task.duration / 60);
+          const minutes = task.duration % 60;
+          const durationStr = `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
           const endTime = new Date(startTime.getTime() + task.duration * 60000);
-          timeSpan.textContent = `Start: ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — End: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+          timeSpan.textContent = `${durationStr} — Ends: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
           startTime = endTime;
         } else {
           timeSpan.textContent = `Completed`;
@@ -302,29 +306,20 @@
       overlay.addEventListener('click', outsideClickHandler);
     }
 
-    // Initialize SortableJS on the task list for drag-and-drop reordering
-    const sortable = new Sortable(document.getElementById('taskList'), {
+    // Initialize sortable drag & drop
+    new Sortable(document.getElementById('taskList'), {
       animation: 150,
-      ghostClass: 'sortable-ghost',
-      delay: 300, // 300ms press-and-hold delay for drag start
-      delayOnTouchOnly: true, // only delay on touch devices
-      onEnd: (evt) => {
-        // Update taskList array order based on DOM reorder
-        const newOrder = [];
-        const items = document.querySelectorAll('#taskList li');
-        items.forEach(item => {
-          const idx = parseInt(item.getAttribute('data-id'));
-          newOrder.push(taskList[idx]);
-        });
-        taskList = newOrder;
+      onEnd: function(evt) {
+        const movedItem = taskList.splice(evt.oldIndex, 1)[0];
+        taskList.splice(evt.newIndex, 0, movedItem);
         saveTasks();
         renderTasks();
       }
     });
 
-    // Run initial render and start clock
     updateCurrentTime();
-    setInterval(updateCurrentTime, 60000);
+    setInterval(updateCurrentTime, 60000); // update every minute
+
   </script>
 </body>
 </html>
