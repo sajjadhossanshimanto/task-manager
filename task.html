@@ -66,20 +66,30 @@
       background: #008e76;
     }
     .delete-btn {
-      background: var(--danger-color);
-      color: white;
+      background: none;
+      color: var(--danger-color);
       border: none;
-      padding: 6px 12px;
-      border-radius: 5px;
+      font-size: 1.2em;
       cursor: pointer;
       margin-left: 10px;
     }
     .delete-btn:hover {
-      background: #e53935;
+      color: #e53935;
     }
     .task-text {
       flex-grow: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       padding: 0 10px;
+      width: 100%;
+    }
+    .task-name {
+      font-weight: bold;
+    }
+    .task-time {
+      font-size: 0.9em;
+      color: #ccc;
     }
     .form-popup-overlay {
       position: fixed;
@@ -158,17 +168,27 @@
         const textSpan = document.createElement("span");
         textSpan.className = "task-text";
 
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "task-name";
+        nameSpan.textContent = task.name;
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "task-time";
+
         if (!task.completed) {
           const endTime = new Date(startTime.getTime() + task.duration * 60000);
-          textSpan.textContent = `${task.name} — Start: ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — End: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+          timeSpan.textContent = `Start: ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — End: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
           startTime = endTime;
         } else {
-          textSpan.textContent = `${task.name} — Completed`;
+          timeSpan.textContent = `Completed`;
         }
+
+        textSpan.appendChild(nameSpan);
+        textSpan.appendChild(timeSpan);
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
-        deleteBtn.textContent = "Delete";
+        deleteBtn.innerHTML = "🗑️";
         deleteBtn.onclick = () => {
           taskList.splice(index, 1);
           localStorage.setItem("taskList", JSON.stringify(taskList));
@@ -230,7 +250,7 @@
       });
     }
 
-    setInterval(updateCurrentTime, 60000); // update every minute
+    setInterval(updateCurrentTime, 60000);
     updateCurrentTime();
   </script>
 </body>
