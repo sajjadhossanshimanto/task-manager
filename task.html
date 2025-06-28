@@ -155,7 +155,7 @@
           </div>
         </div>
         <div class="col-md-1">
-          <button class="btn btn-success w-100">Add</button>
+          <button class="btn btn-success w-100">➕</button>
         </div>
       </form>
 
@@ -232,15 +232,15 @@
         const timeSpan = document.createElement("span");
         timeSpan.className = "task-time";
 
-        if (!task.completed) {
           const endTime = new Date(startTime.getTime() + task.duration * 60000);
           const hrs = Math.floor(task.duration / 60);
           const mins = task.duration % 60;
           const durationStr = `${hrs > 0 ? hrs + 'h ' : ''}${mins}m`;
+        if (!task.completed) {
           timeSpan.textContent = `${durationStr} — Ends: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
           startTime = endTime;
         } else {
-          timeSpan.textContent = `Completed`;
+          timeSpan.textContent = `${durationStr}`;
         }
 
         timeSpan.ondblclick = () => {
