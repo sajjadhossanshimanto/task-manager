@@ -164,16 +164,27 @@
 
     <div class="category-column">
       <div id="timerSection" style="margin-bottom: 18px;">
-        <div class="card p-2 bg-dark text-white" style="min-width: 180px; box-shadow: 0 2px 8px #0008;">
-          <div class="d-flex align-items-center justify-content-between">
-            <span style="font-weight: bold;">⏱ Timer</span>
-            <span id="timerDisplay">00:00:00</span>
+        <div class="card p-3 bg-dark text-white" style="min-width: 200px; box-shadow: 0 2px 8px #0008; border-radius: 14px;">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span style="font-weight: bold; font-size: 1.1em; letter-spacing: 1px;">⏱ Countdown Timer</span>
+            <button id="timerSettingsBtn" class="btn btn-sm btn-outline-light p-1" title="Set Timer" style="border-radius: 50%;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='3'/><path d='M19.4 15A7 7 0 1 0 12 19.93M12 3v2m6.36 1.64-1.42 1.42M21 12h-2m-1.64 6.36-1.42-1.42M3 12h2m1.64-6.36 1.42 1.42'/></svg></button>
           </div>
-          <div class="mt-2 d-flex gap-1">
-            <button id="timerStart" class="btn btn-sm btn-success">Start</button>
-            <button id="timerPause" class="btn btn-sm btn-warning">Pause</button>
-            <button id="timerReset" class="btn btn-sm btn-danger">Reset</button>
+          <div class="text-center mb-2">
+            <span id="timerDisplay" style="font-size:2.1em; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 2px;">00:00:00</span>
           </div>
+          <div class="d-flex justify-content-center gap-2" id="timerBtnGroup">
+            <button id="timerStart" class="btn btn-success btn-circle" title="Start" style="border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><polygon points='5 3 19 12 5 21 5 3'/></svg></button>
+          </div>
+          <form id="timerSetForm" class="mt-2" style="display:none;">
+            <div class="d-flex gap-1 align-items-center justify-content-center">
+              <input id="timerHrs" type="number" min="0" max="23" class="form-control form-control-sm bg-dark text-white" style="width:40px;" placeholder="hh">
+              <span>:</span>
+              <input id="timerMins" type="number" min="0" max="59" class="form-control form-control-sm bg-dark text-white" style="width:40px;" placeholder="mm">
+              <span>:</span>
+              <input id="timerSecs" type="number" min="0" max="59" class="form-control form-control-sm bg-dark text-white" style="width:40px;" placeholder="ss">
+              <button type="submit" class="btn btn-sm btn-primary" title="Set"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M5 13l4 4L19 7'/></svg></button>
+            </div>
+          </form>
         </div>
       </div>
       <div class="category-list" id="categoryList"></div>
@@ -433,41 +444,116 @@
     }
 
 
-    // Simple Timer Logic
+    // Countdown Timer Logic
     let timerInterval = null;
-    let timerSeconds = 0;
-    let timerRunning = false;
+    let timerTotalSeconds = 0;
+    let timerSecondsLeft = 0;
+    let timerState = 'idle'; // idle, running, paused
 
     function updateTimerDisplay() {
-      const hrs = String(Math.floor(timerSeconds / 3600)).padStart(2, '0');
-      const mins = String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0');
-      const secs = String(timerSeconds % 60).padStart(2, '0');
+      const hrs = String(Math.floor(timerSecondsLeft / 3600)).padStart(2, '0');
+      const mins = String(Math.floor((timerSecondsLeft % 3600) / 60)).padStart(2, '0');
+      const secs = String(timerSecondsLeft % 60).padStart(2, '0');
       document.getElementById('timerDisplay').textContent = `${hrs}:${mins}:${secs}`;
     }
 
+    function setTimerBtns() {
+      const btnGroup = document.getElementById('timerBtnGroup');
+      btnGroup.innerHTML = '';
+      if (timerState === 'idle' || timerState === 'paused') {
+        // Start button
+        const startBtn = document.createElement('button');
+        startBtn.id = 'timerStart';
+        startBtn.className = 'btn btn-success btn-circle';
+        startBtn.title = 'Start';
+        startBtn.style = 'border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;';
+        startBtn.innerHTML = "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><polygon points='5 3 19 12 5 21 5 3'/></svg>";
+        startBtn.onclick = startTimer;
+        btnGroup.appendChild(startBtn);
+      }
+      if (timerState === 'running') {
+        // Pause button
+        const pauseBtn = document.createElement('button');
+        pauseBtn.id = 'timerPause';
+        pauseBtn.className = 'btn btn-warning btn-circle';
+        pauseBtn.title = 'Pause';
+        pauseBtn.style = 'border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;';
+        pauseBtn.innerHTML = "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><rect x='6' y='4' width='4' height='16'/><rect x='14' y='4' width='4' height='16'/></svg>";
+        pauseBtn.onclick = pauseTimer;
+        btnGroup.appendChild(pauseBtn);
+        // Reset button
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'timerReset';
+        resetBtn.className = 'btn btn-danger btn-circle';
+        resetBtn.title = 'Reset';
+        resetBtn.style = 'border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;';
+        resetBtn.innerHTML = "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M1 4v6h6'/><path d='M3.51 15a9 9 0 1 0 2.13-9.36L1 10'/></svg>";
+        resetBtn.onclick = resetTimer;
+        btnGroup.appendChild(resetBtn);
+      }
+      if (timerState === 'paused') {
+        // Reset button
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'timerReset';
+        resetBtn.className = 'btn btn-danger btn-circle';
+        resetBtn.title = 'Reset';
+        resetBtn.style = 'border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;';
+        resetBtn.innerHTML = "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M1 4v6h6'/><path d='M3.51 15a9 9 0 1 0 2.13-9.36L1 10'/></svg>";
+        resetBtn.onclick = resetTimer;
+        btnGroup.appendChild(resetBtn);
+      }
+    }
+
     function startTimer() {
-      if (timerRunning) return;
-      timerRunning = true;
+      if (timerSecondsLeft <= 0) return;
+      timerState = 'running';
+      setTimerBtns();
       timerInterval = setInterval(() => {
-        timerSeconds++;
-        updateTimerDisplay();
+        if (timerSecondsLeft > 0) {
+          timerSecondsLeft--;
+          updateTimerDisplay();
+        } else {
+          clearInterval(timerInterval);
+          timerState = 'idle';
+          setTimerBtns();
+        }
       }, 1000);
     }
     function pauseTimer() {
-      timerRunning = false;
+      timerState = 'paused';
       clearInterval(timerInterval);
+      setTimerBtns();
     }
     function resetTimer() {
-      timerRunning = false;
+      timerState = 'idle';
       clearInterval(timerInterval);
-      timerSeconds = 0;
+      timerSecondsLeft = timerTotalSeconds;
       updateTimerDisplay();
+      setTimerBtns();
     }
 
-    document.getElementById('timerStart').onclick = startTimer;
-    document.getElementById('timerPause').onclick = pauseTimer;
-    document.getElementById('timerReset').onclick = resetTimer;
+    // Timer settings
+    document.getElementById('timerSettingsBtn').onclick = () => {
+      const form = document.getElementById('timerSetForm');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    };
+    document.getElementById('timerSetForm').onsubmit = (e) => {
+      e.preventDefault();
+      const hrs = parseInt(document.getElementById('timerHrs').value) || 0;
+      const mins = parseInt(document.getElementById('timerMins').value) || 0;
+      const secs = parseInt(document.getElementById('timerSecs').value) || 0;
+      timerTotalSeconds = hrs * 3600 + mins * 60 + secs;
+      timerSecondsLeft = timerTotalSeconds;
+      timerState = 'idle';
+      updateTimerDisplay();
+      setTimerBtns();
+      document.getElementById('timerSetForm').style.display = 'none';
+    };
+    // Initialize
+    timerTotalSeconds = 0;
+    timerSecondsLeft = 0;
     updateTimerDisplay();
+    setTimerBtns();
 
 
     renderColorPalette();
