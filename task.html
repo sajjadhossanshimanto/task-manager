@@ -448,6 +448,7 @@
     let timerTotalSeconds = 0;
     let timerSecondsLeft = 0;
     let timerState = 'idle'; // idle, running, paused
+    let timerEndTimestamp = null;
 
     function updateTimerDisplay() {
       const hrs = String(Math.floor(timerSecondsLeft / 3600)).padStart(2, '0');
@@ -455,6 +456,12 @@
       const secs = String(timerSecondsLeft % 60).padStart(2, '0');
       const display = document.getElementById('timerDisplay');
       display.innerHTML = `<span class='timer-part' data-part='hrs'>${hrs}</span>:<span class='timer-part' data-part='mins'>${mins}</span>:<span class='timer-part' data-part='secs'>${secs}</span>`;
+      // Update document title if running
+      if (timerState === 'running') {
+        document.title = `${hrs}:${mins}:${secs} - Task Manager`;
+      } else {
+        document.title = 'Task Manager';
+      }
     }
 
     function setTimerBtns() {
@@ -508,27 +515,31 @@
       if (timerSecondsLeft <= 0) return;
       timerState = 'running';
       setTimerBtns();
+      timerEndTimestamp = Date.now() + timerSecondsLeft * 1000;
+      clearInterval(timerInterval);
       timerInterval = setInterval(() => {
-        if (timerSecondsLeft > 0) {
-          timerSecondsLeft--;
-          updateTimerDisplay();
-        } else {
+        const now = Date.now();
+        timerSecondsLeft = Math.max(0, Math.round((timerEndTimestamp - now) / 1000));
+        updateTimerDisplay();
+        if (timerSecondsLeft <= 0) {
           clearInterval(timerInterval);
           timerState = 'idle';
           setTimerBtns();
           document.getElementById('timerEndSound').play();
         }
-      }, 1000);
+      }, 250);
     }
     function pauseTimer() {
       timerState = 'paused';
       clearInterval(timerInterval);
+      timerEndTimestamp = null;
       setTimerBtns();
     }
     function resetTimer() {
       timerState = 'idle';
       clearInterval(timerInterval);
       timerSecondsLeft = timerTotalSeconds;
+      timerEndTimestamp = null;
       updateTimerDisplay();
       setTimerBtns();
     }
