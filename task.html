@@ -163,6 +163,19 @@
     </div>
 
     <div class="category-column">
+      <div id="timerSection" style="margin-bottom: 18px;">
+        <div class="card p-2 bg-dark text-white" style="min-width: 180px; box-shadow: 0 2px 8px #0008;">
+          <div class="d-flex align-items-center justify-content-between">
+            <span style="font-weight: bold;">⏱ Timer</span>
+            <span id="timerDisplay">00:00:00</span>
+          </div>
+          <div class="mt-2 d-flex gap-1">
+            <button id="timerStart" class="btn btn-sm btn-success">Start</button>
+            <button id="timerPause" class="btn btn-sm btn-warning">Pause</button>
+            <button id="timerReset" class="btn btn-sm btn-danger">Reset</button>
+          </div>
+        </div>
+      </div>
       <div class="category-list" id="categoryList"></div>
       <hr class="text-secondary" />
       <form id="categoryForm" class="mt-3">
@@ -418,6 +431,43 @@
       saveCategories();
       updateCategoryDropdown();
     }
+
+
+    // Simple Timer Logic
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let timerRunning = false;
+
+    function updateTimerDisplay() {
+      const hrs = String(Math.floor(timerSeconds / 3600)).padStart(2, '0');
+      const mins = String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0');
+      const secs = String(timerSeconds % 60).padStart(2, '0');
+      document.getElementById('timerDisplay').textContent = `${hrs}:${mins}:${secs}`;
+    }
+
+    function startTimer() {
+      if (timerRunning) return;
+      timerRunning = true;
+      timerInterval = setInterval(() => {
+        timerSeconds++;
+        updateTimerDisplay();
+      }, 1000);
+    }
+    function pauseTimer() {
+      timerRunning = false;
+      clearInterval(timerInterval);
+    }
+    function resetTimer() {
+      timerRunning = false;
+      clearInterval(timerInterval);
+      timerSeconds = 0;
+      updateTimerDisplay();
+    }
+
+    document.getElementById('timerStart').onclick = startTimer;
+    document.getElementById('timerPause').onclick = pauseTimer;
+    document.getElementById('timerReset').onclick = resetTimer;
+    updateTimerDisplay();
 
 
     renderColorPalette();
