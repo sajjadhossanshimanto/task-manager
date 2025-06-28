@@ -167,10 +167,9 @@
         <div class="card p-3 bg-dark text-white" style="min-width: 200px; box-shadow: 0 2px 8px #0008; border-radius: 14px;">
           <div class="d-flex align-items-center justify-content-between mb-2">
             <span style="font-weight: bold; font-size: 1.1em; letter-spacing: 1px;">⏱ Countdown Timer</span>
-            <button id="timerSettingsBtn" class="btn btn-sm btn-outline-light p-1" title="Set Timer" style="border-radius: 50%;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='3'/><path d='M19.4 15A7 7 0 1 0 12 19.93M12 3v2m6.36 1.64-1.42 1.42M21 12h-2m-1.64 6.36-1.42-1.42M3 12h2m1.64-6.36 1.42 1.42'/></svg></button>
           </div>
           <div class="text-center mb-2">
-            <span id="timerDisplay" style="font-size:2.1em; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 2px;">00:00:00</span>
+            <span id="timerDisplay" style="font-size:2.1em; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 2px; cursor:pointer; user-select:none;">00:00:00</span>
           </div>
           <div class="d-flex justify-content-center gap-2" id="timerBtnGroup">
             <button id="timerStart" class="btn btn-success btn-circle" title="Start" style="border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><polygon points='5 3 19 12 5 21 5 3'/></svg></button>
@@ -182,9 +181,9 @@
               <input id="timerMins" type="number" min="0" max="59" class="form-control form-control-sm bg-dark text-white" style="width:40px;" placeholder="mm">
               <span>:</span>
               <input id="timerSecs" type="number" min="0" max="59" class="form-control form-control-sm bg-dark text-white" style="width:40px;" placeholder="ss">
-              <button type="submit" class="btn btn-sm btn-primary" title="Set"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path d='M5 13l4 4L19 7'/></svg></button>
             </div>
           </form>
+          <audio id="timerEndSound" src="sound-effect-old-phone.mp3" preload="auto"></audio>
         </div>
       </div>
       <div class="category-list" id="categoryList"></div>
@@ -454,7 +453,8 @@
       const hrs = String(Math.floor(timerSecondsLeft / 3600)).padStart(2, '0');
       const mins = String(Math.floor((timerSecondsLeft % 3600) / 60)).padStart(2, '0');
       const secs = String(timerSecondsLeft % 60).padStart(2, '0');
-      document.getElementById('timerDisplay').textContent = `${hrs}:${mins}:${secs}`;
+      const display = document.getElementById('timerDisplay');
+      display.innerHTML = `<span class='timer-part' data-part='hrs'>${hrs}</span>:<span class='timer-part' data-part='mins'>${mins}</span>:<span class='timer-part' data-part='secs'>${secs}</span>`;
     }
 
     function setTimerBtns() {
@@ -516,6 +516,7 @@
           clearInterval(timerInterval);
           timerState = 'idle';
           setTimerBtns();
+          document.getElementById('timerEndSound').play();
         }
       }, 1000);
     }
@@ -532,28 +533,51 @@
       setTimerBtns();
     }
 
-    // Timer settings
-    document.getElementById('timerSettingsBtn').onclick = () => {
-      const form = document.getElementById('timerSetForm');
-      form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    };
-    document.getElementById('timerSetForm').onsubmit = (e) => {
-      e.preventDefault();
-      const hrs = parseInt(document.getElementById('timerHrs').value) || 0;
-      const mins = parseInt(document.getElementById('timerMins').value) || 0;
-      const secs = parseInt(document.getElementById('timerSecs').value) || 0;
-      timerTotalSeconds = hrs * 3600 + mins * 60 + secs;
-      timerSecondsLeft = timerTotalSeconds;
-      timerState = 'idle';
+    // Double click to set timer part
+    document.addEventListener('DOMContentLoaded', () => {
       updateTimerDisplay();
       setTimerBtns();
-      document.getElementById('timerSetForm').style.display = 'none';
-    };
-    // Initialize
-    timerTotalSeconds = 0;
-    timerSecondsLeft = 0;
-    updateTimerDisplay();
-    setTimerBtns();
+      const timerDisplay = document.getElementById('timerDisplay');
+      timerDisplay.addEventListener('dblclick', function(e) {
+        if (!e.target.classList.contains('timer-part')) return;
+        const part = e.target.getAttribute('data-part');
+        const current = e.target.textContent;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.max = part === 'hrs' ? '23' : '59';
+        input.value = parseInt(current, 10);
+        input.style.textAlign = 'center';
+        input.style.background = '#222';
+        input.style.color = '#fff';
+        input.style.border = '1px solid #555';
+        input.style.borderRadius = '6px';
+        e.target.replaceWith(input);
+        input.focus();
+        input.select();
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', function(ev) {
+          if (ev.key === 'Enter') input.blur();
+          if (ev.key === 'Escape') finishEdit();
+        });
+        function finishEdit() {
+          let val = parseInt(input.value, 10);
+          if (isNaN(val) || val < 0) val = 0;
+          if (part === 'hrs') val = Math.min(val, 23);
+          else val = Math.min(val, 59);
+          let hrs = Math.floor(timerSecondsLeft / 3600);
+          let mins = Math.floor((timerSecondsLeft % 3600) / 60);
+          let secs = timerSecondsLeft % 60;
+          if (part === 'hrs') hrs = val;
+          if (part === 'mins') mins = val;
+          if (part === 'secs') secs = val;
+          timerTotalSeconds = hrs * 3600 + mins * 60 + secs;
+          timerSecondsLeft = timerTotalSeconds;
+          updateTimerDisplay();
+          setTimerBtns();
+        }
+      });
+    });
 
 
     renderColorPalette();
