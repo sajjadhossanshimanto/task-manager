@@ -228,14 +228,40 @@
         const nameSpan = document.createElement("span");
         nameSpan.className = "task-name";
         nameSpan.textContent = task.name;
+        // Enable editing task name on double click
+        nameSpan.ondblclick = () => {
+          if (task.completed) return;
+          const input = document.createElement("input");
+          input.type = "text";
+          input.value = task.name;
+          input.style.width = Math.max(80, task.name.length * 10) + "px";
+          input.style.fontSize = "1em";
+          nameSpan.textContent = "";
+          nameSpan.appendChild(input);
+          input.focus();
+          input.addEventListener("blur", () => {
+            const newName = input.value.trim();
+            if (newName) {
+              task.name = newName;
+              saveTasks();
+              renderTasks();
+            } else {
+              renderTasks();
+            }
+          });
+          input.addEventListener("keydown", e => {
+            if (e.key === "Enter") input.blur();
+            if (e.key === "Escape") renderTasks();
+          });
+        };
 
         const timeSpan = document.createElement("span");
         timeSpan.className = "task-time";
 
-          const endTime = new Date(startTime.getTime() + task.duration * 60000);
-          const hrs = Math.floor(task.duration / 60);
-          const mins = task.duration % 60;
-          const durationStr = `${hrs > 0 ? hrs + 'h ' : ''}${mins}m`;
+        const endTime = new Date(startTime.getTime() + task.duration * 60000);
+        const hrs = Math.floor(task.duration / 60);
+        const mins = task.duration % 60;
+        const durationStr = `${hrs > 0 ? hrs + 'h ' : ''}${mins}m`;
         if (!task.completed) {
           timeSpan.textContent = `${durationStr} — Ends: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
           startTime = endTime;
