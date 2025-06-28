@@ -202,6 +202,22 @@
         <button type="submit" class="btn btn-outline-light w-100">Create Category</button>
       </form>
 
+      <!-- Calendar View -->
+      <div id="calendarContainer" class="mt-4 p-3" style="background: var(--card-color); border-radius: 10px; box-shadow: 0 2px 8px #0004;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <button id="prevMonth" class="btn btn-sm btn-outline-light px-2 py-0">&#8592;</button>
+          <span id="calendarMonth" style="font-weight: 500;"></span>
+          <button id="nextMonth" class="btn btn-sm btn-outline-light px-2 py-0">&#8594;</button>
+        </div>
+        <table class="table table-sm table-dark mb-0" style="border-radius:8px;overflow:hidden;">
+          <thead>
+            <tr id="calendarDays"></tr>
+          </thead>
+          <tbody id="calendarDates"></tbody>
+        </table>
+      </div>
+      <!-- End Calendar View -->
+
     </div>
   </div>
 
@@ -597,6 +613,50 @@
     updateCurrentTime();
     setInterval(updateCurrentTime, 60000);
     updateCategoryDropdown();
+
+    // Calendar Logic
+    const calendarMonth = document.getElementById('calendarMonth');
+    const calendarDays = document.getElementById('calendarDays');
+    const calendarDates = document.getElementById('calendarDates');
+    const prevMonthBtn = document.getElementById('prevMonth');
+    const nextMonthBtn = document.getElementById('nextMonth');
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let calDate = new Date();
+    calDate.setDate(1);
+
+    function renderCalendar() {
+      // Set month label
+      calendarMonth.textContent = calDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+      // Render day names
+      calendarDays.innerHTML = dayNames.map(d => `<th class='text-center' style='font-size:0.95em;color:#aaa;'>${d}</th>`).join('');
+      // Render dates
+      const year = calDate.getFullYear();
+      const month = calDate.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      let html = '<tr>';
+      for (let i = 0; i < firstDay; i++) html += '<td></td>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const today = new Date();
+        const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+        html += `<td class='text-center' style='padding:2px;${isToday ? 'background:var(--accent-color);color:#fff;border-radius:6px;' : ''}'>${d}</td>`;
+        if ((firstDay + d) % 7 === 0 && d !== daysInMonth) html += '</tr><tr>';
+      }
+      const lastDay = (firstDay + daysInMonth) % 7;
+      for (let i = lastDay; i > 0 && i < 7; i++) html += '<td></td>';
+      html += '</tr>';
+      calendarDates.innerHTML = html;
+    }
+    prevMonthBtn.onclick = () => {
+      calDate.setMonth(calDate.getMonth() - 1);
+      renderCalendar();
+    };
+    nextMonthBtn.onclick = () => {
+      calDate.setMonth(calDate.getMonth() + 1);
+      renderCalendar();
+    };
+    renderCalendar();
   </script>
 </body>
 </html>
