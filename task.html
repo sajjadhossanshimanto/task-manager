@@ -461,21 +461,28 @@
       updateCategoryDropdown();
       nameInput.value = "";
     });
+    // Fix deleteCategory to check all dates for usage
     function deleteCategory(index) {
       const catToDelete = categories[index].name;
-
-      const used = taskList.some(task => task.category === catToDelete);
+      // Check all dates for tasks using this category
+      let used = false;
+      for (const date in taskListByDate) {
+        if (Array.isArray(taskListByDate[date]) && taskListByDate[date].some(task => task.category === catToDelete)) {
+          used = true;
+          break;
+        }
+      }
       if (used) {
         alert("This category is used in tasks. Please reassign or delete those tasks first.");
         return;
       }
-
       if (!confirm(`Are you sure you want to delete category "${catToDelete}"?`)) return;
-
       categories.splice(index, 1);
       saveCategories();
       updateCategoryDropdown();
     }
+    // Make deleteCategory globally accessible for inline onclick
+    window.deleteCategory = deleteCategory;
 
 
     // --- Multi-Timer Logic ---
