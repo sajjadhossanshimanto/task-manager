@@ -139,6 +139,7 @@
 <body>
   <h1>Task Manager</h1>
   <div id="currentTime"></div>
+  <div id="selectedDateDisplay" style="font-size:1.1em;color:#ffc107;text-align:center;margin-bottom:10px;"></div>
 
   <div class="container-box">
     <div class="task-column">
@@ -219,14 +220,34 @@
 
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script>
-    let taskList = JSON.parse(localStorage.getItem("taskList")) || [];
+    // --- Date-dependent Task Storage ---
+    function getTodayStr() {
+      const d = new Date();
+      return d.toISOString().slice(0, 10);
+    }
+    let selectedDate = getTodayStr();
+    let migrated = localStorage.getItem('tasksMigratedV2');
+    let oldTaskList = JSON.parse(localStorage.getItem("taskList")) || [];
+    let taskListByDate = JSON.parse(localStorage.getItem("taskListByDate")) || {};
+    // Migrate old tasks to today if not yet migrated
+    if (!migrated && oldTaskList.length > 0) {
+      taskListByDate[selectedDate] = (taskListByDate[selectedDate] || []).concat(oldTaskList);
+      localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
+      localStorage.removeItem("taskList");
+      localStorage.setItem('tasksMigratedV2', '1');
+    }
+    // Always use date-based storage from now
+    function getTaskList() {
+      return taskListByDate[selectedDate] || [];
+    }
+    function setTaskList(list) {
+      taskListByDate[selectedDate] = list;
+      localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
+    }
+    // --- Category logic remains unchanged ---
     let categories = JSON.parse(localStorage.getItem("categories")) || [
       { name: "General", color: "#00bfa5" }
     ];
-
-    function saveTasks() {
-      localStorage.setItem("taskList", JSON.stringify(taskList));
-    }
     function saveCategories() {
       localStorage.setItem("categories", JSON.stringify(categories));
     }
@@ -241,7 +262,7 @@
       const ul = document.getElementById("taskList");
       ul.innerHTML = "";
       let startTime = new Date();
-
+      let taskList = getTaskList();
       taskList.forEach((task, index) => {
         const li = document.createElement("li");
         li.className = task.completed ? "completed" : "";
@@ -253,7 +274,7 @@
         checkbox.checked = task.completed;
         checkbox.onchange = () => {
           task.completed = checkbox.checked;
-          saveTasks();
+          setTaskList(taskList);
           renderTasks();
         };
 
@@ -278,7 +299,7 @@
             const newName = input.value.trim();
             if (newName) {
               task.name = newName;
-              saveTasks();
+              setTaskList(taskList);
               renderTasks();
             } else {
               renderTasks();
@@ -319,7 +340,7 @@
             const newDuration = parseInt(input.value);
             if (!isNaN(newDuration) && newDuration > 0) {
               task.duration = newDuration;
-              saveTasks();
+              setTaskList(taskList);
               renderTasks();
             } else {
               renderTasks();
@@ -339,7 +360,7 @@
         deleteBtn.innerHTML = "🗑️";
         deleteBtn.onclick = () => {
           taskList.splice(index, 1);
-          saveTasks();
+          setTaskList(taskList);
           renderTasks();
         };
 
@@ -379,8 +400,9 @@
         alert("Invalid input");
         return;
       }
+      let taskList = getTaskList();
       taskList.push({ name, duration, completed: false, category });
-      saveTasks();
+      setTaskList(taskList);
       renderTasks();
       e.target.reset();
     }
@@ -389,9 +411,10 @@
     new Sortable(document.getElementById('taskList'), {
       animation: 150,
       onEnd: function(evt) {
+        let taskList = getTaskList();
         const movedItem = taskList.splice(evt.oldIndex, 1)[0];
         taskList.splice(evt.newIndex, 0, movedItem);
-        saveTasks();
+        setTaskList(taskList);
         renderTasks();
       }
     });
@@ -629,17 +652,7 @@
         saveTimers();
         }
       });
-    // Initial render
-    updateTimerDisplay();
-    setTimerBtns();
-    updateTimerNavInfo();
-    renderColorPalette();
-
-
-    updateCurrentTime();
-    setInterval(updateCurrentTime, 60000);
-    updateCategoryDropdown();
-
+    // --- Calendar Logic: Add date selection ---
     // Calendar Logic
     const calendarMonth = document.getElementById('calendarMonth');
     const calendarDays = document.getElementById('calendarDays');
@@ -663,13 +676,23 @@
       for (let d = 1; d <= daysInMonth; d++) {
         const today = new Date();
         const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-        html += `<td class='text-center' style='padding:2px;${isToday ? 'background:var(--accent-color);color:#fff;border-radius:6px;' : ''}'>${d}</td>`;
+        const thisDateStr = new Date(year, month, d).toISOString().slice(0, 10);
+        const isSelected = thisDateStr === selectedDate;
+        html += `<td class='text-center calendar-date-cell' data-date='${thisDateStr}' style='padding:2px;cursor:pointer;${isToday ? 'background:var(--accent-color);color:#fff;border-radius:6px;' : ''}${isSelected ? 'outline:2px solid #ffc107;font-weight:bold;' : ''}'>${d}</td>`;
         if ((firstDay + d) % 7 === 0 && d !== daysInMonth) html += '</tr><tr>';
       }
       const lastDay = (firstDay + daysInMonth) % 7;
       for (let i = lastDay; i > 0 && i < 7; i++) html += '<td></td>';
       html += '</tr>';
       calendarDates.innerHTML = html;
+      // Add click handlers for date selection
+      document.querySelectorAll('.calendar-date-cell').forEach(cell => {
+        cell.onclick = function() {
+          selectedDate = this.getAttribute('data-date');
+          renderTasks();
+          renderCalendar();
+        };
+      });
     }
     prevMonthBtn.onclick = () => {
       calDate.setMonth(calDate.getMonth() - 1);
@@ -679,6 +702,17 @@
       calDate.setMonth(calDate.getMonth() + 1);
       renderCalendar();
     };
+    renderCalendar();
+    // --- Initial render ---
+    updateTimerDisplay();
+    setTimerBtns();
+    updateTimerNavInfo();
+    renderColorPalette();
+
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 60000);
+    updateCategoryDropdown();
+    renderTasks();
     renderCalendar();
   </script>
 </body>
