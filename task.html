@@ -139,7 +139,7 @@
 <body>
   <h1>Task Manager</h1>
   <div id="currentTime"></div>
-
+  <div id="selectedDateDisplay" class="mb-2" style="font-size:1.1em;color:var(--accent-color);font-weight:500;"></div>
   <div class="container-box">
     <div class="task-column">
       <form class="form-inline row g-2" onsubmit="handleTaskForm(event)">
@@ -223,13 +223,34 @@
 
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script>
-    let taskList = JSON.parse(localStorage.getItem("taskList")) || [];
+    // --- Date-dependent Task Storage ---
+    function getTodayStr() {
+      const now = new Date();
+      return now.toISOString().slice(0, 10);
+    }
+    let selectedDate = getTodayStr();
+    let migrated = false;
+    // Migrate old tasks if needed
+    let taskListByDate = JSON.parse(localStorage.getItem("taskListByDate")) || {};
+    let oldTaskList = JSON.parse(localStorage.getItem("taskList"));
+    if (oldTaskList && !Object.keys(taskListByDate).length) {
+      // Migrate all old tasks to today
+      taskListByDate[selectedDate] = oldTaskList;
+      localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
+      localStorage.removeItem("taskList");
+      migrated = true;
+    }
+    // Always work with the new structure
+    taskListByDate = JSON.parse(localStorage.getItem("taskListByDate")) || {};
+    let taskList = taskListByDate[selectedDate] || [];
+
     let categories = JSON.parse(localStorage.getItem("categories")) || [
       { name: "General", color: "#00bfa5" }
     ];
 
     function saveTasks() {
-      localStorage.setItem("taskList", JSON.stringify(taskList));
+      taskListByDate[selectedDate] = taskList;
+      localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
     }
     function saveCategories() {
       localStorage.setItem("categories", JSON.stringify(categories));
@@ -241,17 +262,24 @@
       renderTasks();
     }
 
+    function renderSelectedDate() {
+      const el = document.getElementById('selectedDateDisplay');
+      const d = new Date(selectedDate);
+      el.textContent = `Selected Date: ${d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}`;
+    }
+
     function renderTasks() {
+      // Always update taskList from storage for selectedDate
+      taskListByDate = JSON.parse(localStorage.getItem("taskListByDate")) || {};
+      taskList = taskListByDate[selectedDate] || [];
       const ul = document.getElementById("taskList");
       ul.innerHTML = "";
       let startTime = new Date();
-
       taskList.forEach((task, index) => {
         const li = document.createElement("li");
         li.className = task.completed ? "completed" : "";
         const cat = categories.find(c => c.name === task.category);
         if (cat) li.style.borderLeft = `8px solid ${cat.color}`;
-
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = task.completed;
@@ -260,10 +288,8 @@
           saveTasks();
           renderTasks();
         };
-
         const textSpan = document.createElement("span");
         textSpan.className = "task-text";
-
         const nameSpan = document.createElement("span");
         nameSpan.className = "task-name";
         nameSpan.textContent = task.name;
@@ -293,10 +319,8 @@
             if (e.key === "Escape") renderTasks();
           });
         };
-
         const timeSpan = document.createElement("span");
         timeSpan.className = "task-time";
-
         const endTime = new Date(startTime.getTime() + task.duration * 60000);
         const hrs = Math.floor(task.duration / 60);
         const mins = task.duration % 60;
@@ -307,7 +331,6 @@
         } else {
           timeSpan.textContent = `${durationStr}`;
         }
-
         timeSpan.ondblclick = () => {
           if (task.completed) return;
           const input = document.createElement("input");
@@ -334,10 +357,8 @@
             if (e.key === "Escape") renderTasks();
           });
         };
-
         textSpan.appendChild(nameSpan);
         textSpan.appendChild(timeSpan);
-
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
         deleteBtn.innerHTML = "🗑️";
@@ -346,12 +367,12 @@
           saveTasks();
           renderTasks();
         };
-
         li.appendChild(checkbox);
         li.appendChild(textSpan);
         li.appendChild(deleteBtn);
         ul.appendChild(li);
       });
+      renderSelectedDate();
     }
 
     function updateCategoryDropdown() {
@@ -383,13 +404,14 @@
         alert("Invalid input");
         return;
       }
+      // Always add to the selected date
       taskList.push({ name, duration, completed: false, category });
       saveTasks();
       renderTasks();
       e.target.reset();
     }
 
-
+    // --- Sortable for date-dependent tasks ---
     new Sortable(document.getElementById('taskList'), {
       animation: 150,
       onEnd: function(evt) {
@@ -614,7 +636,7 @@
     setInterval(updateCurrentTime, 60000);
     updateCategoryDropdown();
 
-    // Calendar Logic
+    // --- Calendar Logic (restored) ---
     const calendarMonth = document.getElementById('calendarMonth');
     const calendarDays = document.getElementById('calendarDays');
     const calendarDates = document.getElementById('calendarDates');
@@ -626,11 +648,8 @@
     calDate.setDate(1);
 
     function renderCalendar() {
-      // Set month label
       calendarMonth.textContent = calDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-      // Render day names
       calendarDays.innerHTML = dayNames.map(d => `<th class='text-center' style='font-size:0.95em;color:#aaa;'>${d}</th>`).join('');
-      // Render dates
       const year = calDate.getFullYear();
       const month = calDate.getMonth();
       const firstDay = new Date(year, month, 1).getDay();
@@ -638,15 +657,26 @@
       let html = '<tr>';
       for (let i = 0; i < firstDay; i++) html += '<td></td>';
       for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const today = new Date();
         const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-        html += `<td class='text-center' style='padding:2px;${isToday ? 'background:var(--accent-color);color:#fff;border-radius:6px;' : ''}'>${d}</td>`;
+        const isSelected = dateStr === selectedDate;
+        const hasTasks = (taskListByDate[dateStr] && taskListByDate[dateStr].length > 0);
+        html += `<td class='text-center' style='padding:2px;${isToday ? 'background:var(--accent-color);color:#fff;border-radius:6px;' : ''}${isSelected ? 'outline:2px solid #fff;' : ''}cursor:pointer;position:relative;' data-date='${dateStr}'>${d}${hasTasks ? "<span style='display:inline-block;width:7px;height:7px;background:var(--accent-color);border-radius:50%;margin-left:2px;vertical-align:middle;'></span>" : ''}</td>`;
         if ((firstDay + d) % 7 === 0 && d !== daysInMonth) html += '</tr><tr>';
       }
       const lastDay = (firstDay + daysInMonth) % 7;
       for (let i = lastDay; i > 0 && i < 7; i++) html += '<td></td>';
       html += '</tr>';
       calendarDates.innerHTML = html;
+      // Add click handlers for date selection
+      Array.from(calendarDates.querySelectorAll('td[data-date]')).forEach(td => {
+        td.onclick = () => {
+          selectedDate = td.getAttribute('data-date');
+          renderTasks();
+          renderCalendar();
+        };
+      });
     }
     prevMonthBtn.onclick = () => {
       calDate.setMonth(calDate.getMonth() - 1);
@@ -657,6 +687,8 @@
       renderCalendar();
     };
     renderCalendar();
+    renderSelectedDate();
+    // --- End ---
   </script>
 </body>
 </html>
