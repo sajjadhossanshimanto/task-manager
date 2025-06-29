@@ -662,7 +662,23 @@
         const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
         const isSelected = dateStr === selectedDate;
         const hasTasks = (taskListByDate[dateStr] && taskListByDate[dateStr].length > 0);
-        html += `<td class='text-center' style='padding:2px;${isToday ? 'background:var(--accent-color);color:#fff;border-radius:6px;' : ''}${isSelected ? 'outline:2px solid #fff;' : ''}cursor:pointer;position:relative;' data-date='${dateStr}'>${d}${hasTasks ? "<span style='display:inline-block;width:7px;height:7px;background:var(--accent-color);border-radius:50%;margin-left:2px;vertical-align:middle;'></span>" : ''}</td>`;
+        let cellStyle = `padding:2px;cursor:pointer;position:relative;`;
+        let circleBg = '';
+        let circleColor = '';
+        if (isSelected) {
+          circleBg = 'background: var(--accent-color); color: #fff;';
+          circleColor = 'color: #fff;';
+        } else if (isToday) {
+          circleBg = 'background: #fff; color: var(--accent-color);';
+          circleColor = 'color: var(--accent-color);';
+        } else {
+          circleBg = 'background: transparent; color: #fff;';
+          circleColor = 'color: #fff;';
+        }
+        html += `<td class='text-center' style='${cellStyle}' data-date='${dateStr}'>
+          <div style='display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;${circleBg};font-weight:600;transition:background 0.2s, color 0.2s;box-shadow:${isSelected ? '0 0 0 2px #fff' : ''};${hasTasks ? 'border:2px solid var(--accent-color);' : ''} ${circleColor}'>${d}</div>
+          <!-- ${hasTasks ? "<span style='display:inline-block;width:7px;height:7px;background:var(--accent-color);border-radius:50%;margin-left:2px;vertical-align:middle;position:absolute;bottom:4px;right:8px;'></span>" : ''} -->
+        </td>`;
         if ((firstDay + d) % 7 === 0 && d !== daysInMonth) html += '</tr><tr>';
       }
       const lastDay = (firstDay + daysInMonth) % 7;
