@@ -685,7 +685,26 @@
         const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
         const thisDateStr = new Date(year, month, d).toISOString().slice(0, 10);
         const isSelected = thisDateStr === selectedDate;
-        html += `<td class='text-center calendar-date-cell' data-date='${thisDateStr}' style='padding:2px;cursor:pointer;${isToday ? 'background:var(--accent-color);color:#fff;border-radius:6px;' : ''}${isSelected ? 'outline:2px solid #ffc107;font-weight:bold;' : ''}'>${d}</td>`;
+
+        let cellStyle = `padding:2px;cursor:pointer;position:relative;`;
+        let circleBg = '';
+        let circleColor = '';
+        
+        // Check if there are tasks for this date
+        const hasTasks = Array.isArray(taskListByDate[thisDateStr]) && taskListByDate[thisDateStr].length > 0;
+        if (isSelected) {
+          circleBg = 'background: var(--accent-color); color: #fff;';
+          circleColor = 'color: #fff;';
+        } else if (isToday) {
+          circleBg = 'background: #fff; color: var(--accent-color);';
+          circleColor = 'color: var(--accent-color);';
+        } else {
+          circleBg = 'background: transparent; color: #fff;';
+          circleColor = 'color: #fff;';
+        }
+        html += `<td class='text-center calendar-date-cell' style='${cellStyle}' data-date='${thisDateStr}'>
+          <div style='display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;${circleBg};font-weight:600;transition:background 0.2s, color 0.2s;box-shadow:${isSelected ? '0 0 0 2px #fff' : ''};${hasTasks ? 'border:2px solid var(--accent-color);' : ''} ${circleColor}'>${d}</div>
+        </td>`;
         if ((firstDay + d) % 7 === 0 && d !== daysInMonth) html += '</tr><tr>';
       }
       const lastDay = (firstDay + daysInMonth) % 7;
@@ -709,7 +728,7 @@
       calDate.setMonth(calDate.getMonth() + 1);
       renderCalendar();
     };
-    renderCalendar();
+    
     // --- Initial render ---
     updateTimerDisplay();
     setTimerBtns();
