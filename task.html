@@ -139,7 +139,7 @@
 <body>
   <h1>Task Manager</h1>
   <div id="currentTime"></div>
-  <div id="selectedDateDisplay" class="mb-2" style="font-size:1.1em;color:var(--accent-color);font-weight:500;"></div>
+
   <div class="container-box">
     <div class="task-column">
       <form class="form-inline row g-2" onsubmit="handleTaskForm(event)">
@@ -166,23 +166,19 @@
       <div id="timerSection" style="margin-bottom: 18px;">
         <div class="card p-3 bg-dark text-white" style="min-width: 200px; box-shadow: 0 2px 8px #0008; border-radius: 14px;">
           <div class="d-flex align-items-center justify-content-between mb-2">
-            <span style="font-weight: bold; font-size: 1.1em; letter-spacing: 1px;">⏱ Countdown Timer</span>
+            <span style="font-weight: bold; font-size: 1.1em; letter-spacing: 1px;">⏱ Countdown Timers</span>
+            <span id="timerNavInfo" style="font-size:0.95em;color:#aaa;"></span>
           </div>
-          <div class="text-center mb-2">
-            <span id="timerDisplay" style="font-size:2.1em; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 2px; cursor:pointer; user-select:none;">00:00:00</span>
+          <div class="d-flex align-items-center justify-content-center mb-2" style="gap:8px;">
+            <button id="timerPrev" class="btn btn-outline-light btn-sm" style="border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;" title="Previous Timer">&#8592;</button>
+            <span id="timerDisplay" style="font-size:2.1em; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 2px; cursor:pointer; user-select:none;min-width:140px;display:inline-block;"></span>
+            <button id="timerNext" class="btn btn-outline-light btn-sm" style="border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;" title="Next Timer">&#8594;</button>
           </div>
-          <div class="d-flex justify-content-center gap-2" id="timerBtnGroup">
-            <button id="timerStart" class="btn btn-success btn-circle" title="Start" style="border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><polygon points='5 3 19 12 5 21 5 3'/></svg></button>
+          <div class="d-flex justify-content-center gap-2 mb-2" id="timerBtnGroup"></div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <button id="addTimerBtn" class="btn btn-success btn-sm" title="Add Timer" style="border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">+</button>
+            <button id="removeTimerBtn" class="btn btn-danger btn-sm" title="Remove Timer" style="border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">&#128465;</button>
           </div>
-          <form id="timerSetForm" class="mt-2" style="display:none;">
-            <div class="d-flex gap-1 align-items-center justify-content-center">
-              <input id="timerHrs" type="number" min="0" max="23" class="form-control form-control-sm bg-dark text-white" style="width:40px;" placeholder="hh">
-              <span>:</span>
-              <input id="timerMins" type="number" min="0" max="59" class="form-control form-control-sm bg-dark text-white" style="width:40px;" placeholder="mm">
-              <span>:</span>
-              <input id="timerSecs" type="number" min="0" max="59" class="form-control form-control-sm bg-dark text-white" style="width:40px;" placeholder="ss">
-            </div>
-          </form>
           <audio id="timerEndSound" src="sound-effect-old-phone.mp3" preload="auto"></audio>
         </div>
       </div>
@@ -223,34 +219,13 @@
 
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script>
-    // --- Date-dependent Task Storage ---
-    function getTodayStr() {
-      const now = new Date();
-      return now.toISOString().slice(0, 10);
-    }
-    let selectedDate = getTodayStr();
-    let migrated = false;
-    // Migrate old tasks if needed
-    let taskListByDate = JSON.parse(localStorage.getItem("taskListByDate")) || {};
-    let oldTaskList = JSON.parse(localStorage.getItem("taskList"));
-    if (oldTaskList && !Object.keys(taskListByDate).length) {
-      // Migrate all old tasks to today
-      taskListByDate[selectedDate] = oldTaskList;
-      localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
-      localStorage.removeItem("taskList");
-      migrated = true;
-    }
-    // Always work with the new structure
-    taskListByDate = JSON.parse(localStorage.getItem("taskListByDate")) || {};
-    let taskList = taskListByDate[selectedDate] || [];
-
+    let taskList = JSON.parse(localStorage.getItem("taskList")) || [];
     let categories = JSON.parse(localStorage.getItem("categories")) || [
       { name: "General", color: "#00bfa5" }
     ];
 
     function saveTasks() {
-      taskListByDate[selectedDate] = taskList;
-      localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
+      localStorage.setItem("taskList", JSON.stringify(taskList));
     }
     function saveCategories() {
       localStorage.setItem("categories", JSON.stringify(categories));
@@ -262,24 +237,17 @@
       renderTasks();
     }
 
-    function renderSelectedDate() {
-      const el = document.getElementById('selectedDateDisplay');
-      const d = new Date(selectedDate);
-      el.textContent = `Selected Date: ${d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}`;
-    }
-
     function renderTasks() {
-      // Always update taskList from storage for selectedDate
-      taskListByDate = JSON.parse(localStorage.getItem("taskListByDate")) || {};
-      taskList = taskListByDate[selectedDate] || [];
       const ul = document.getElementById("taskList");
       ul.innerHTML = "";
       let startTime = new Date();
+
       taskList.forEach((task, index) => {
         const li = document.createElement("li");
         li.className = task.completed ? "completed" : "";
         const cat = categories.find(c => c.name === task.category);
         if (cat) li.style.borderLeft = `8px solid ${cat.color}`;
+
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = task.completed;
@@ -288,8 +256,10 @@
           saveTasks();
           renderTasks();
         };
+
         const textSpan = document.createElement("span");
         textSpan.className = "task-text";
+
         const nameSpan = document.createElement("span");
         nameSpan.className = "task-name";
         nameSpan.textContent = task.name;
@@ -319,8 +289,10 @@
             if (e.key === "Escape") renderTasks();
           });
         };
+
         const timeSpan = document.createElement("span");
         timeSpan.className = "task-time";
+
         const endTime = new Date(startTime.getTime() + task.duration * 60000);
         const hrs = Math.floor(task.duration / 60);
         const mins = task.duration % 60;
@@ -331,6 +303,7 @@
         } else {
           timeSpan.textContent = `${durationStr}`;
         }
+
         timeSpan.ondblclick = () => {
           if (task.completed) return;
           const input = document.createElement("input");
@@ -357,8 +330,10 @@
             if (e.key === "Escape") renderTasks();
           });
         };
+
         textSpan.appendChild(nameSpan);
         textSpan.appendChild(timeSpan);
+
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
         deleteBtn.innerHTML = "🗑️";
@@ -367,12 +342,12 @@
           saveTasks();
           renderTasks();
         };
+
         li.appendChild(checkbox);
         li.appendChild(textSpan);
         li.appendChild(deleteBtn);
         ul.appendChild(li);
       });
-      renderSelectedDate();
     }
 
     function updateCategoryDropdown() {
@@ -404,14 +379,13 @@
         alert("Invalid input");
         return;
       }
-      // Always add to the selected date
       taskList.push({ name, duration, completed: false, category });
       saveTasks();
       renderTasks();
       e.target.reset();
     }
 
-    // --- Sortable for date-dependent tasks ---
+
     new Sortable(document.getElementById('taskList'), {
       animation: 150,
       onEnd: function(evt) {
@@ -481,34 +455,40 @@
     }
 
 
-    // Countdown Timer Logic
+    // --- Multi-Timer Logic ---
+    let timers = JSON.parse(localStorage.getItem('timers')) || [
+      { total: 0, left: 0, state: 'idle' }
+    ];
+    let activeTimerIdx = 0;
     let timerInterval = null;
-    let timerTotalSeconds = 0;
-    let timerSecondsLeft = 0;
-    let timerState = 'idle'; // idle, running, paused
-    let timerEndTimestamp = null;
-
+    function saveTimers() {
+      localStorage.setItem('timers', JSON.stringify(timers));
+    }
+    function updateTimerNavInfo() {
+      document.getElementById('timerNavInfo').textContent = `Timer ${activeTimerIdx+1} / ${timers.length}`;
+    }
     function updateTimerDisplay() {
-      const hrs = String(Math.floor(timerSecondsLeft / 3600)).padStart(2, '0');
-      const mins = String(Math.floor((timerSecondsLeft % 3600) / 60)).padStart(2, '0');
-      const secs = String(timerSecondsLeft % 60).padStart(2, '0');
+      const t = timers[activeTimerIdx];
+      const left = t.left;
+      const hrs = String(Math.floor(left / 3600)).padStart(2, '0');
+      const mins = String(Math.floor((left % 3600) / 60)).padStart(2, '0');
+      const secs = String(left % 60).padStart(2, '0');
       const display = document.getElementById('timerDisplay');
       display.innerHTML = `<span class='timer-part' data-part='hrs'>${hrs}</span>:<span class='timer-part' data-part='mins'>${mins}</span>:<span class='timer-part' data-part='secs'>${secs}</span>`;
-      // Update document title if running
-      if (timerState === 'running') {
+      if (t.state === 'running') {
         document.title = `${hrs}:${mins}:${secs} - Task Manager`;
       } else {
         document.title = 'Task Manager';
       }
+      updateTimerNavInfo();
     }
-
     function setTimerBtns() {
       const btnGroup = document.getElementById('timerBtnGroup');
       btnGroup.innerHTML = '';
-      if (timerState === 'idle' || timerState === 'paused') {
+      const t = timers[activeTimerIdx];
+      if (t.state === 'idle' || t.state === 'paused') {
         // Start button
         const startBtn = document.createElement('button');
-        startBtn.id = 'timerStart';
         startBtn.className = 'btn btn-success btn-circle';
         startBtn.title = 'Start';
         startBtn.style = 'border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;';
@@ -516,10 +496,9 @@
         startBtn.onclick = startTimer;
         btnGroup.appendChild(startBtn);
       }
-      if (timerState === 'running') {
+      if (t.state === 'running') {
         // Pause button
         const pauseBtn = document.createElement('button');
-        pauseBtn.id = 'timerPause';
         pauseBtn.className = 'btn btn-warning btn-circle';
         pauseBtn.title = 'Pause';
         pauseBtn.style = 'border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;';
@@ -528,7 +507,6 @@
         btnGroup.appendChild(pauseBtn);
         // Reset button
         const resetBtn = document.createElement('button');
-        resetBtn.id = 'timerReset';
         resetBtn.className = 'btn btn-danger btn-circle';
         resetBtn.title = 'Reset';
         resetBtn.style = 'border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;';
@@ -536,10 +514,9 @@
         resetBtn.onclick = resetTimer;
         btnGroup.appendChild(resetBtn);
       }
-      if (timerState === 'paused') {
+      if (t.state === 'paused') {
         // Reset button
         const resetBtn = document.createElement('button');
-        resetBtn.id = 'timerReset';
         resetBtn.className = 'btn btn-danger btn-circle';
         resetBtn.title = 'Reset';
         resetBtn.style = 'border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;';
@@ -548,46 +525,69 @@
         btnGroup.appendChild(resetBtn);
       }
     }
-
     function startTimer() {
-      if (timerSecondsLeft <= 0) return;
-      timerState = 'running';
+      const t = timers[activeTimerIdx];
+      if (t.left <= 0) return;
+      t.state = 'running';
       setTimerBtns();
-      timerEndTimestamp = Date.now() + timerSecondsLeft * 1000;
       clearInterval(timerInterval);
       timerInterval = setInterval(() => {
-        const now = Date.now();
-        timerSecondsLeft = Math.max(0, Math.round((timerEndTimestamp - now) / 1000));
+        t.left = Math.max(0, t.left - 1);
         updateTimerDisplay();
-        if (timerSecondsLeft <= 0) {
+        if (t.left <= 0) {
           clearInterval(timerInterval);
-          timerState = 'idle';
+          t.state = 'idle';
           setTimerBtns();
           document.getElementById('timerEndSound').play();
         }
-      }, 250);
+        saveTimers();
+      }, 1000);
+      saveTimers();
     }
     function pauseTimer() {
-      timerState = 'paused';
+      const t = timers[activeTimerIdx];
+      t.state = 'paused';
       clearInterval(timerInterval);
-      timerEndTimestamp = null;
       setTimerBtns();
+      saveTimers();
     }
     function resetTimer() {
-      timerState = 'idle';
+      const t = timers[activeTimerIdx];
+      t.state = 'idle';
       clearInterval(timerInterval);
-      timerSecondsLeft = timerTotalSeconds;
-      timerEndTimestamp = null;
+      t.left = t.total;
       updateTimerDisplay();
       setTimerBtns();
+      saveTimers();
     }
-
-    // Double click to set timer part
-    document.addEventListener('DOMContentLoaded', () => {
+    function switchTimer(idx) {
+      if (idx < 0 || idx >= timers.length) return;
+      clearInterval(timerInterval);
+      activeTimerIdx = idx;
       updateTimerDisplay();
       setTimerBtns();
-      const timerDisplay = document.getElementById('timerDisplay');
-      timerDisplay.addEventListener('dblclick', function(e) {
+      saveTimers();
+    }
+    function addTimer() {
+      timers.push({ total: 0, left: 0, state: 'idle' });
+      switchTimer(timers.length - 1);
+    }
+    function removeTimer() {
+      if (timers.length <= 1) return;
+      timers.splice(activeTimerIdx, 1);
+      if (activeTimerIdx >= timers.length) activeTimerIdx = timers.length - 1;
+      switchTimer(activeTimerIdx);
+    }
+    document.getElementById('timerPrev').onclick = () => {
+      switchTimer((activeTimerIdx - 1 + timers.length) % timers.length);
+    };
+    document.getElementById('timerNext').onclick = () => {
+      switchTimer((activeTimerIdx + 1) % timers.length);
+    };
+    document.getElementById('addTimerBtn').onclick = addTimer;
+    document.getElementById('removeTimerBtn').onclick = removeTimer;
+    // Double click to set timer part
+    document.getElementById('timerDisplay').addEventListener('dblclick', function(e) {
         if (!e.target.classList.contains('timer-part')) return;
         const part = e.target.getAttribute('data-part');
         const current = e.target.textContent;
@@ -614,21 +614,25 @@
           if (isNaN(val) || val < 0) val = 0;
           if (part === 'hrs') val = Math.min(val, 23);
           else val = Math.min(val, 59);
-          let hrs = Math.floor(timerSecondsLeft / 3600);
-          let mins = Math.floor((timerSecondsLeft % 3600) / 60);
-          let secs = timerSecondsLeft % 60;
+        let t = timers[activeTimerIdx];
+        let hrs = Math.floor(t.left / 3600);
+        let mins = Math.floor((t.left % 3600) / 60);
+        let secs = t.left % 60;
           if (part === 'hrs') hrs = val;
           if (part === 'mins') mins = val;
           if (part === 'secs') secs = val;
-          timerTotalSeconds = hrs * 3600 + mins * 60 + secs;
-          timerSecondsLeft = timerTotalSeconds;
+        t.total = hrs * 3600 + mins * 60 + secs;
+        t.left = t.total;
+        t.state = 'idle';
           updateTimerDisplay();
           setTimerBtns();
+        saveTimers();
         }
       });
-    });
-
-
+    // Initial render
+    updateTimerDisplay();
+    setTimerBtns();
+    updateTimerNavInfo();
     renderColorPalette();
 
 
@@ -636,7 +640,7 @@
     setInterval(updateCurrentTime, 60000);
     updateCategoryDropdown();
 
-    // --- Calendar Logic (restored) ---
+    // Calendar Logic
     const calendarMonth = document.getElementById('calendarMonth');
     const calendarDays = document.getElementById('calendarDays');
     const calendarDates = document.getElementById('calendarDates');
@@ -657,42 +661,15 @@
       let html = '<tr>';
       for (let i = 0; i < firstDay; i++) html += '<td></td>';
       for (let d = 1; d <= daysInMonth; d++) {
-        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const today = new Date();
         const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-        const isSelected = dateStr === selectedDate;
-        const hasTasks = (taskListByDate[dateStr] && taskListByDate[dateStr].length > 0);
-        let cellStyle = `padding:2px;cursor:pointer;position:relative;`;
-        let circleBg = '';
-        let circleColor = '';
-        if (isSelected) {
-          circleBg = 'background: var(--accent-color); color: #fff;';
-          circleColor = 'color: #fff;';
-        } else if (isToday) {
-          circleBg = 'background: #fff; color: var(--accent-color);';
-          circleColor = 'color: var(--accent-color);';
-        } else {
-          circleBg = 'background: transparent; color: #fff;';
-          circleColor = 'color: #fff;';
-        }
-        html += `<td class='text-center' style='${cellStyle}' data-date='${dateStr}'>
-          <div style='display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;${circleBg};font-weight:600;transition:background 0.2s, color 0.2s;box-shadow:${isSelected ? '0 0 0 2px #fff' : ''};${hasTasks ? 'border:2px solid var(--accent-color);' : ''} ${circleColor}'>${d}</div>
-          <!-- ${hasTasks ? "<span style='display:inline-block;width:7px;height:7px;background:var(--accent-color);border-radius:50%;margin-left:2px;vertical-align:middle;position:absolute;bottom:4px;right:8px;'></span>" : ''} -->
-        </td>`;
+        html += `<td class='text-center' style='padding:2px;${isToday ? 'background:var(--accent-color);color:#fff;border-radius:6px;' : ''}'>${d}</td>`;
         if ((firstDay + d) % 7 === 0 && d !== daysInMonth) html += '</tr><tr>';
       }
       const lastDay = (firstDay + daysInMonth) % 7;
       for (let i = lastDay; i > 0 && i < 7; i++) html += '<td></td>';
       html += '</tr>';
       calendarDates.innerHTML = html;
-      // Add click handlers for date selection
-      Array.from(calendarDates.querySelectorAll('td[data-date]')).forEach(td => {
-        td.onclick = () => {
-          selectedDate = td.getAttribute('data-date');
-          renderTasks();
-          renderCalendar();
-        };
-      });
     }
     prevMonthBtn.onclick = () => {
       calDate.setMonth(calDate.getMonth() - 1);
@@ -703,8 +680,6 @@
       renderCalendar();
     };
     renderCalendar();
-    renderSelectedDate();
-    // --- End ---
   </script>
 </body>
 </html>
