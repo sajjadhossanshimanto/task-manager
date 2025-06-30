@@ -7,6 +7,7 @@ let selectedDate = getTodayStr();
 let migrated = localStorage.getItem('tasksMigratedV2');
 let oldTaskList = JSON.parse(localStorage.getItem("taskList")) || [];
 let taskListByDate = JSON.parse(localStorage.getItem("taskListByDate")) || {};
+
 // Migrate old tasks to today if not yet migrated
 if (!migrated && oldTaskList.length > 0) {
   taskListByDate[selectedDate] = (taskListByDate[selectedDate] || []).concat(oldTaskList);
@@ -14,6 +15,7 @@ if (!migrated && oldTaskList.length > 0) {
   localStorage.removeItem("taskList");
   localStorage.setItem('tasksMigratedV2', '1');
 }
+
 // Always use date-based storage from now
 function getTaskList() {
   return taskListByDate[selectedDate] || [];
@@ -22,6 +24,7 @@ function setTaskList(list) {
   taskListByDate[selectedDate] = list;
   localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
 }
+
 // --- Category logic remains unchanged ---
 let categories = JSON.parse(localStorage.getItem("categories")) || [
   { name: "General", color: "#00bfa5" }
@@ -160,6 +163,7 @@ function renderTasks() {
     li.appendChild(deleteBtn);
     ul.appendChild(li);
   });
+  
   renderTaskSummary();
   updateSelectedDateLabel();
 }
@@ -337,12 +341,15 @@ let timers = JSON.parse(localStorage.getItem('timers')) || [
 ];
 let activeTimerIdx = 0;
 let timerInterval = null;
+
 function saveTimers() {
   localStorage.setItem('timers', JSON.stringify(timers));
 }
+
 function updateTimerNavInfo() {
   document.getElementById('timerNavInfo').textContent = `Timer ${activeTimerIdx+1} / ${timers.length}`;
 }
+
 function updateTimerDisplay() {
   const t = timers[activeTimerIdx];
   const left = t.left;
@@ -358,6 +365,7 @@ function updateTimerDisplay() {
   }
   updateTimerNavInfo();
 }
+
 function setTimerBtns() {
   const btnGroup = document.getElementById('timerBtnGroup');
   btnGroup.innerHTML = '';
@@ -401,6 +409,7 @@ function setTimerBtns() {
     btnGroup.appendChild(resetBtn);
   }
 }
+
 function startTimer() {
   const t = timers[activeTimerIdx];
   if (t.left <= 0) return;
@@ -427,6 +436,7 @@ function startTimer() {
   }, 1000);
   saveTimers();
 }
+
 function pauseTimer() {
   const t = timers[activeTimerIdx];
   t.state = 'paused';
@@ -434,6 +444,7 @@ function pauseTimer() {
   setTimerBtns();
   saveTimers();
 }
+
 function resetTimer() {
   const t = timers[activeTimerIdx];
   t.state = 'idle';
@@ -443,6 +454,7 @@ function resetTimer() {
   setTimerBtns();
   saveTimers();
 }
+
 function switchTimer(idx) {
   if (idx < 0 || idx >= timers.length) return;
   clearInterval(timerInterval);
@@ -451,16 +463,19 @@ function switchTimer(idx) {
   setTimerBtns();
   saveTimers();
 }
+
 function addTimer() {
   timers.push({ total: 0, left: 0, state: 'idle' });
   switchTimer(timers.length - 1);
 }
+
 function removeTimer() {
   if (timers.length <= 1) return;
   timers.splice(activeTimerIdx, 1);
   if (activeTimerIdx >= timers.length) activeTimerIdx = timers.length - 1;
   switchTimer(activeTimerIdx);
 }
+
 document.getElementById('timerPrev').onclick = () => {
   switchTimer((activeTimerIdx - 1 + timers.length) % timers.length);
 };
@@ -492,6 +507,7 @@ document.getElementById('timerDisplay').addEventListener('dblclick', function(e)
       if (ev.key === 'Enter') input.blur();
       if (ev.key === 'Escape') finishEdit();
     });
+
     function finishEdit() {
       let val = parseInt(input.value, 10);
       if (isNaN(val) || val < 0) val = 0;
@@ -593,10 +609,12 @@ function renderCalendar() {
     };
   });
 }
+
 prevMonthBtn.onclick = () => {
   calDate.setMonth(calDate.getMonth() - 1);
   renderCalendar();
 };
+
 nextMonthBtn.onclick = () => {
   calDate.setMonth(calDate.getMonth() + 1);
   renderCalendar();
