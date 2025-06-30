@@ -52,12 +52,37 @@ function updateSelectedDateLabel() {
   label.textContent = `Tasks for ${d.toLocaleDateString(undefined, {year:'numeric',month:'short',day:'numeric'})}`;
 }
 
+// --- Collapse Completed Tasks Feature ---
+let collapseCompleted = JSON.parse(localStorage.getItem('collapseCompleted')) || false;
+
+function setCollapseCompleted(val) {
+  collapseCompleted = val;
+  localStorage.setItem('collapseCompleted', JSON.stringify(val));
+  renderTasks();
+}
+
+function renderCollapseCompletedBtn() {
+  let btn = document.getElementById('collapseCompletedBtn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'collapseCompletedBtn';
+    btn.className = 'btn btn-secondary btn-sm mb-2';
+    btn.style = 'margin-bottom:8px;';
+    const taskCol = document.querySelector('.task-column');
+    taskCol.insertBefore(btn, document.getElementById('taskList'));
+  }
+  btn.textContent = collapseCompleted ? 'Show Completed Tasks' : 'Collapse Completed Tasks';
+  btn.onclick = () => setCollapseCompleted(!collapseCompleted);
+}
+
 function renderTasks() {
+  renderCollapseCompletedBtn();
   const ul = document.getElementById("taskList");
   ul.innerHTML = "";
   let startTime = new Date();
   let taskList = getTaskList();
   taskList.forEach((task, index) => {
+    if (collapseCompleted && task.completed) return; // Hide completed if collapsed
     const li = document.createElement("li");
     li.className = task.completed ? "completed" : "";
     const cat = categories.find(c => c.name === task.category);
