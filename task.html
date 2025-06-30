@@ -205,6 +205,8 @@
             <div class="d-flex justify-content-center gap-2 mb-2" id="timerBtnGroup"></div>
             <button id="addTimerBtn" class="btn btn-success btn-sm" title="Add Timer" style="border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">+</button>
           </div>
+          <!-- Stop Sound Button (hidden by default) -->
+          <button id="stopSoundBtn" class="btn btn-warning btn-sm w-100 mb-2" style="display:none;">Stop Sound</button>
           <audio id="timerEndSound" src="sound-effect-old-phone.mp3" preload="auto"></audio>
         </div>
       </div>
@@ -646,7 +648,11 @@
           clearInterval(timerInterval);
           t.state = 'idle';
           setTimerBtns();
-          document.getElementById('timerEndSound').play();
+          const sound = document.getElementById('timerEndSound');
+          sound.currentTime = 0;
+          sound.play();
+          // Show stop sound button
+          document.getElementById('stopSoundBtn').style.display = '';
         }
         saveTimers();
       }, 1000);
@@ -735,8 +741,25 @@
           updateTimerDisplay();
           setTimerBtns();
         saveTimers();
-        }
-      });
+      }
+    });
+
+    // --- Stop Sound Button logic ---
+    document.addEventListener('DOMContentLoaded', function() {
+      const stopSoundBtn = document.getElementById('stopSoundBtn');
+      const timerEndSound = document.getElementById('timerEndSound');
+      if (stopSoundBtn && timerEndSound) {
+        stopSoundBtn.onclick = function() {
+          timerEndSound.pause();
+          timerEndSound.currentTime = 0;
+          stopSoundBtn.style.display = 'none';
+        };
+        timerEndSound.addEventListener('ended', function() {
+          stopSoundBtn.style.display = 'none';
+        });
+      }
+    });
+    
     // --- Calendar Logic: Add date selection ---
     // Calendar Logic
     const calendarMonth = document.getElementById('calendarMonth');
