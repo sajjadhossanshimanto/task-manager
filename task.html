@@ -760,7 +760,9 @@
       for (let d = 1; d <= daysInMonth; d++) {
         const today = new Date();
         const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-        const thisDateStr = new Date(year, month, d).toISOString().slice(0, 10);
+        // Use local time for date string to avoid timezone issues
+        const thisDate = new Date(year, month, d, 12, 0, 0, 0); // noon to avoid DST issues
+        const thisDateStr = thisDate.toISOString().slice(0, 10);
         const isSelected = thisDateStr === selectedDate;
 
         let cellStyle = `padding:2px;cursor:pointer;position:relative;`;
