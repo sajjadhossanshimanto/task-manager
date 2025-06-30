@@ -647,6 +647,9 @@
         if (t.left <= 0) {
           clearInterval(timerInterval);
           t.state = 'idle';
+          // Reset timer to original time when it stops
+          t.left = t.total;
+          updateTimerDisplay();
           setTimerBtns();
           const sound = document.getElementById('timerEndSound');
           sound.currentTime = 0;
@@ -759,7 +762,7 @@
         });
       }
     });
-    
+
     // --- Calendar Logic: Add date selection ---
     // Calendar Logic
     const calendarMonth = document.getElementById('calendarMonth');
