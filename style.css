@@ -1,0 +1,128 @@
+/* Task Manager Styles */
+:root {
+  --bg-color: #121212;
+  --text-color: #ffffff;
+  --card-color: #1e1e1e;
+  --accent-color: #00bfa5;
+  --completed-color: #555;
+  --danger-color: #ff5252;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+.container-box {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  max-width: 1000px;
+  margin-top: 1rem;
+}
+.task-column {
+  flex: 2;
+}
+.category-column {
+  flex: 1;
+}
+h1 {
+  text-align: center;
+  color: var(--accent-color);
+}
+#currentTime {
+  font-size: 1.2rem;
+  color: #ccc;
+  margin-bottom: 1rem;
+}
+ul {
+  list-style: none;
+  padding: 0;
+}
+li {
+  background: var(--card-color);
+  margin: 10px 0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  height: 42px;
+}
+li.completed {
+  text-decoration: line-through;
+  background: var(--completed-color);
+  color: #aaa;
+}
+.delete-btn {
+  background: none;
+  color: var(--danger-color);
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  margin-left: 10px;
+}
+.task-text {
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+}
+.task-name {
+  font-weight: bold;
+  font-size: 1em;
+}
+.task-time {
+  font-size: 0.85em;
+  color: #ccc;
+  text-align: right;
+  white-space: nowrap;
+  min-width: 170px;
+}
+.form-inline {
+  background: var(--card-color);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  margin-top: 1rem;
+}
+.form-inline input,
+.form-inline select {
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #555;
+}
+.category-list {
+  background: var(--card-color);
+  padding: 15px;
+  border-radius: 10px;
+}
+.category-tag {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.category-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+.color-swatch.selected {
+  outline: 2px solid var(--accent-color);
+}
