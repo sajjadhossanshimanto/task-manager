@@ -160,6 +160,7 @@
         </div>
       </form>
 
+      <div id="selectedDateLabel" style="font-size:1.1em;font-weight:500;margin:10px 0 0 0;color:var(--accent-color)"></div>
       <ul id="taskList"></ul>
     </div>
 
@@ -265,6 +266,19 @@
       const now = new Date();
       document.getElementById("currentTime").innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       renderTasks();
+    }
+
+    // --- UI LABEL FOR SELECTED DATE ---
+    function updateSelectedDateLabel() {
+      let label = document.getElementById('selectedDateLabel');
+      if (!label) {
+        label = document.createElement('div');
+        label.id = 'selectedDateLabel';
+        label.style = 'font-size:1.1em;font-weight:500;margin:10px 0 0 0;color:var(--accent-color)';
+        document.querySelector('.task-column').insertBefore(label, document.getElementById('taskList'));
+      }
+      const d = new Date(selectedDate);
+      label.textContent = `Tasks for ${d.toLocaleDateString(undefined, {year:'numeric',month:'short',day:'numeric'})}`;
     }
 
     function renderTasks() {
@@ -780,6 +794,7 @@
           selectedDate = this.getAttribute('data-date');
           renderTasks();
           renderCalendar();
+          updateSelectedDateLabel();
         };
       });
     }
