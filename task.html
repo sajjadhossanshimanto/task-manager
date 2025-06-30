@@ -164,6 +164,13 @@
     </div>
 
     <div class="category-column">
+      <!-- Task Summary -->
+      <div id="taskSummaryContainer" class="mb-3 p-3" style="background: var(--card-color); border-radius: 10px; box-shadow: 0 2px 8px #0004; color: #fff;">
+        <h5 style="color: var(--accent-color); font-weight: 600; margin-bottom: 10px;">Task Summary</h5>
+        <div id="taskSummaryContent" style="font-size:1.05em;"></div>
+      </div>
+      <!-- End Task Summary -->
+
       <!-- Calendar View -->
       <div id="calendarContainer" class="mt-4 p-3" style="background: var(--card-color); border-radius: 10px; box-shadow: 0 2px 8px #0004;">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -171,6 +178,7 @@
           <span id="calendarMonth" style="font-weight: 500;"></span>
           <button id="nextMonth" class="btn btn-sm btn-outline-light px-2 py-0">&#8594;</button>
         </div>
+
         <table class="table table-sm table-dark mb-0" style="border-radius:8px;overflow:hidden;">
           <thead>
             <tr id="calendarDays"></tr>
@@ -370,6 +378,61 @@
         li.appendChild(deleteBtn);
         ul.appendChild(li);
       });
+      renderTaskSummary();
+    }
+
+    function renderTaskSummary() {
+      const summaryDiv = document.getElementById('taskSummaryContent');
+      if (!summaryDiv) return;
+      const taskList = getTaskList();
+      if (!taskList.length) {
+        summaryDiv.innerHTML = '<span style="color:#aaa;">No tasks for this date.</span>';
+        return;
+      }
+      let totalMinutes = 0, completedMinutes = 0, leftMinutes = 0;
+      let catMap = {};
+      taskList.forEach(task => {
+        totalMinutes += task.duration;
+        if (!catMap[task.category]) catMap[task.category] = { total: 0, completed: 0 };
+        catMap[task.category].total += task.duration;
+        if (task.completed) {
+          completedMinutes += task.duration;
+          catMap[task.category].completed += task.duration;
+        } else {
+          leftMinutes += task.duration;
+        }
+      });
+      const fmt = m => `${Math.floor(m/60)}h ${(m%60)}m`;
+      let html = `<div class='row mb-2'>
+        <div class='col-6'><b>Total Task Time:</b></div><div class='col-6 text-end'>${fmt(totalMinutes)}</div>
+      </div>`;
+      html += `<div class='row mb-2'>
+        <div class='col-6'><span style='color:#8bc34a'><b>Completed:</b></span></div><div class='col-6 text-end' style='color:#8bc34a'>${fmt(completedMinutes)}</div>
+      </div>`;
+      html += `<div class='row mb-2'>
+        <div class='col-6'><span style='color:#ffc107'><b>Left:</b></span></div><div class='col-6 text-end' style='color:#ffc107'>${fmt(leftMinutes)}</div>
+      </div>`;
+      html += `<div class='mb-2'><b>By Category:</b></div>`;
+      html += `<div style='max-height:110px;overflow-y:auto;'>`;
+      Object.entries(catMap).forEach(([cat, data]) => {
+        const catObj = categories.find(c => c.name === cat);
+        const color = catObj ? catObj.color : '#fff';
+        html += `<div class='d-flex align-items-center mb-1' style='gap:8px;'>
+          <span style='display:inline-block;width:14px;height:14px;border-radius:50%;background:${color};border:1px solid #fff;'></span>
+          <span style='flex:1;'>${cat}</span>
+          <span style='color:#8bc34a;'>${fmt(data.completed)}</span>
+          <span style='color:#aaa;'>/</span>
+          <span style='color:#ffc107;'>${fmt(data.total)}</span>
+        </div>`;
+      });
+      html += `</div>`;
+      // Progress bar
+      const percent = totalMinutes ? Math.round((completedMinutes/totalMinutes)*100) : 0;
+      html += `<div class='progress mt-2' style='height:10px;background:#222;'>
+        <div class='progress-bar' role='progressbar' style='width:${percent}%;background:var(--accent-color);' aria-valuenow='${percent}' aria-valuemin='0' aria-valuemax='100'></div>
+      </div>
+      <div class='text-end' style='font-size:0.95em;color:#aaa;'>${percent}% completed</div>`;
+      summaryDiv.innerHTML = html;
     }
 
     function updateCategoryDropdown() {
