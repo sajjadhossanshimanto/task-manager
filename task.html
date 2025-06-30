@@ -406,11 +406,16 @@
       let html = `<div class='row mb-2'>
         <div class='col-6'><b>Total Task Time:</b></div><div class='col-6 text-end'>${fmt(totalMinutes)}</div>
       </div>`;
-      html += `<div class='row mb-2'>
-        <div class='col-6'><span style='color:#8bc34a'><b>Completed:</b></span></div><div class='col-6 text-end' style='color:#8bc34a'>${fmt(completedMinutes)}</div>
-      </div>`;
-      html += `<div class='row mb-2'>
-        <div class='col-6'><span style='color:#ffc107'><b>Left:</b></span></div><div class='col-6 text-end' style='color:#ffc107'>${fmt(leftMinutes)}</div>
+      // Combined progress bar for completed/left
+      const percent = totalMinutes ? Math.round((completedMinutes/totalMinutes)*100) : 0;
+      html += `<div class='progress mb-1' style='height:14px;background:#222;'>
+        <div class='progress-bar' role='progressbar' style='width:${percent}%;background:var(--accent-color);' aria-valuenow='${percent}' aria-valuemin='0' aria-valuemax='100'>
+        </div>
+      </div>
+      <div class='d-flex justify-content-between mb-2' style='font-size:0.98em;'>
+        <span style='color:#8bc34a'><b>Completed:</b> ${fmt(completedMinutes)}</span>
+        <span style='color:#ffc107'><b>Left:</b> ${fmt(leftMinutes)}</span>
+        <span style='color:#aaa;'>${percent}%</span>
       </div>`;
       html += `<div class='mb-2'><b>By Category:</b></div>`;
       html += `<div style='max-height:110px;overflow-y:auto;'>`;
@@ -426,12 +431,6 @@
         </div>`;
       });
       html += `</div>`;
-      // Progress bar
-      const percent = totalMinutes ? Math.round((completedMinutes/totalMinutes)*100) : 0;
-      html += `<div class='progress mt-2' style='height:10px;background:#222;'>
-        <div class='progress-bar' role='progressbar' style='width:${percent}%;background:var(--accent-color);' aria-valuenow='${percent}' aria-valuemin='0' aria-valuemax='100'></div>
-      </div>
-      <div class='text-end' style='font-size:0.95em;color:#aaa;'>${percent}% completed</div>`;
       summaryDiv.innerHTML = html;
     }
 
