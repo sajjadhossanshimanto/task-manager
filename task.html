@@ -189,15 +189,53 @@
 
     function renderCollapseCompletedBtn() {
         let container = document.getElementById('task-list-container');
-        let btn = document.getElementById('collapseCompletedBtn');
-        if (!btn) {
-            btn = document.createElement('button');
-            btn.id = 'collapseCompletedBtn';
-            btn.className = 'text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-md transition-colors float-right -mt-12';
-            container.insertBefore(btn, container.firstChild.nextSibling);
+        // Ensure container is relative for positioning the switch
+        if (container.style.position !== 'relative') {
+            container.style.position = 'relative';
         }
-        btn.textContent = collapseCompleted ? 'Show Completed' : 'Hide Completed';
-        btn.onclick = () => setCollapseCompleted(!collapseCompleted);
+
+        let wrapper = document.getElementById('collapseCompletedWrapper');
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.id = 'collapseCompletedWrapper';
+            // Position the toggle switch at the top-right of its container
+            wrapper.className = 'absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center space-x-3';
+
+            const labelText = document.createElement('span');
+            labelText.id = 'collapseCompletedLabel';
+            labelText.className = 'text-sm font-medium text-gray-400';
+            labelText.textContent = 'Hide Completed'; // Static label for the toggle
+
+            const switchLabel = document.createElement('label');
+            switchLabel.className = 'relative inline-flex items-center cursor-pointer';
+            
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = 'collapseCompletedToggle';
+            input.className = 'sr-only peer';
+            // When the toggle changes, update the collapse state
+            input.onchange = (e) => {
+                setCollapseCompleted(!e.target.checked);
+            };
+
+            const switchBg = document.createElement('div');
+            // This is a standard Tailwind CSS toggle switch implementation
+            switchBg.className = "w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-offset-2 peer-focus:ring-offset-gray-800 peer-focus:ring-teal-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500";
+
+            switchLabel.appendChild(input);
+            switchLabel.appendChild(switchBg);
+            
+            wrapper.appendChild(labelText);
+            wrapper.appendChild(switchLabel);
+            
+            // Prepend the wrapper to the container so it's at the top
+            container.prepend(wrapper);
+        }
+
+        // Update the toggle's checked state based on the collapseCompleted variable
+        const toggleInput = document.getElementById('collapseCompletedToggle');
+        // The toggle is ON (checked) when tasks are NOT collapsed
+        toggleInput.checked = !collapseCompleted; 
     }
 
     function renderTasks() {
