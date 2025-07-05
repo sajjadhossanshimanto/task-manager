@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Task Manager</title>
-    <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles for better theme integration */
@@ -40,7 +39,6 @@
     <div id="selectedDateDisplay" class="text-lg text-yellow-400 text-center mb-4"></div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6 w-full max-w-7xl mx-auto">
-        <!-- Task Column -->
         <main class="lg:col-span-2 space-y-6">
             <form class="flex flex-col sm:flex-row items-center gap-3 bg-gray-800/50 p-4 rounded-xl" onsubmit="handleTaskForm(event)">
                 <input type="text" id="taskName" placeholder="Task Name" required class="w-full sm:flex-grow bg-gray-700 border-gray-600 placeholder-gray-400 text-white rounded-md px-4 py-2 focus:ring-teal-500 focus:border-teal-500 transition" />
@@ -57,7 +55,6 @@
             </div>
         </main>
 
-        <!-- Sidebar Column -->
         <aside class="space-y-8">
             <div id="taskSummaryContainer" class="bg-gray-800/50 p-6 rounded-xl">
                 <h3 class="text-lg font-semibold mb-4 text-gray-200">Task Summary</h3>
@@ -401,7 +398,6 @@
         const duration = parseInt(document.getElementById('taskDuration').value);
         const category = document.getElementById('taskCategory').value;
         if (!name || isNaN(duration) || duration <= 0) {
-            // A more subtle notification could be used here instead of alert
             console.error("Invalid task input");
             return;
         }
@@ -476,13 +472,55 @@
     }
     window.deleteCategory = deleteCategory;
 
-    // --- Multi-Timer Logic (Functionality unchanged, styling updated in HTML/JS) ---
+    // --- Multi-Timer Logic (REFACTORED FOR CONCURRENT TIMERS) ---
     let timers = JSON.parse(localStorage.getItem('timers')) || [{ total: 0, left: 0, state: 'idle' }];
     let activeTimerIdx = 0;
-    let timerInterval = null;
+    // The single master interval is initialized at the end of the script
+    let masterTimerInterval = null; 
 
-    function saveTimers() { localStorage.setItem('timers', JSON.stringify(timers)); }
-    function updateTimerNavInfo() { document.getElementById('timerNavInfo').textContent = `Timer ${activeTimerIdx + 1} / ${timers.length}`; }
+    function saveTimers() {
+        localStorage.setItem('timers', JSON.stringify(timers));
+    }
+    
+    // This is the new master "tick" function that runs every second
+    function masterTick() {
+        let activeTimerNeedsUiUpdate = false;
+        
+        timers.forEach((timer, index) => {
+            if (timer.state === 'running') {
+                timer.left = Math.max(0, timer.left - 1);
+
+                // If a timer finishes
+                if (timer.left <= 0) {
+                    timer.state = 'idle';
+                    timer.left = timer.total; // Reset to its original time
+                    
+                    // If the timer that just finished is the one we are looking at
+                    if (index === activeTimerIdx) {
+                        document.getElementById('timerEndSound').play();
+                        document.getElementById('stopSoundBtn').style.display = 'block';
+                        setTimerBtns(); // Update buttons to show "Start" etc.
+                    }
+                }
+                
+                // If the currently viewed timer is running, we need to update the display
+                if (index === activeTimerIdx) {
+                    activeTimerNeedsUiUpdate = true;
+                }
+            }
+        });
+
+        if (activeTimerNeedsUiUpdate) {
+            updateTimerDisplay();
+        }
+        
+        // Save the state of all timers every second
+        saveTimers();
+    }
+
+    function updateTimerNavInfo() {
+        document.getElementById('timerNavInfo').textContent = `Timer ${activeTimerIdx + 1} / ${timers.length}`;
+    }
 
     function updateTimerDisplay() {
         const t = timers[activeTimerIdx];
@@ -492,7 +530,17 @@
         const secs = String(left % 60).padStart(2, '0');
         const display = document.getElementById('timerDisplay');
         display.innerHTML = `<span class='timer-part' data-part='hrs'>${hrs}</span>:<span class='timer-part' data-part='mins'>${mins}</span>:<span class='timer-part' data-part='secs'>${secs}</span>`;
-        document.title = t.state === 'running' ? `${hrs}:${mins}:${secs} - Task Manager` : 'Task Manager';
+        
+        // Update page title only if the active timer is running
+        if (t.state === 'running') {
+            document.title = `${hrs}:${mins}:${secs} - Task Manager`;
+        } else if (document.title !== 'Task Manager') {
+            // Reset title if no active timer is running
+            const anyTimerRunning = timers.some(timer => timer.state === 'running');
+            if (!anyTimerRunning) {
+                 document.title = 'Task Manager';
+            }
+        }
         updateTimerNavInfo();
     }
 
@@ -525,58 +573,45 @@
         }
     }
 
+    // startTimer now just changes the state; the masterTick function handles the countdown
     function startTimer() {
         const t = timers[activeTimerIdx];
         if (t.left <= 0) return;
         t.state = 'running';
         setTimerBtns();
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            t.left = Math.max(0, t.left - 1);
-            updateTimerDisplay();
-            if (t.left <= 0) {
-                clearInterval(timerInterval);
-                t.state = 'idle';
-                t.left = t.total;
-                updateTimerDisplay();
-                setTimerBtns();
-                document.getElementById('timerEndSound').play();
-                document.getElementById('stopSoundBtn').style.display = 'block';
-            }
-            saveTimers();
-        }, 1000);
         saveTimers();
     }
 
+    // pauseTimer now just changes the state
     function pauseTimer() {
-        timers[activeTimerIdx].state = 'paused';
-        clearInterval(timerInterval);
+        const t = timers[activeTimerIdx];
+        t.state = 'paused';
         setTimerBtns();
         saveTimers();
     }
 
+    // resetTimer now just changes the state and resets the time
     function resetTimer() {
         const t = timers[activeTimerIdx];
         t.state = 'idle';
-        clearInterval(timerInterval);
         t.left = t.total;
         updateTimerDisplay();
         setTimerBtns();
         saveTimers();
     }
 
+    // switchTimer no longer needs to clear intervals, it just changes the view
     function switchTimer(idx) {
         if (idx < 0 || idx >= timers.length) return;
-        clearInterval(timerInterval);
         activeTimerIdx = idx;
         updateTimerDisplay();
         setTimerBtns();
-        saveTimers();
     }
 
     function addTimer() {
         timers.push({ total: 0, left: 0, state: 'idle' });
         switchTimer(timers.length - 1);
+        saveTimers();
     }
 
     function removeTimer() {
@@ -584,6 +619,7 @@
         timers.splice(activeTimerIdx, 1);
         if (activeTimerIdx >= timers.length) activeTimerIdx = timers.length - 1;
         switchTimer(activeTimerIdx);
+        saveTimers();
     }
 
     document.getElementById('timerPrev').onclick = () => switchTimer((activeTimerIdx - 1 + timers.length) % timers.length);
@@ -693,6 +729,9 @@
 
     // --- Initial render ---
     document.addEventListener('DOMContentLoaded', () => {
+        // Start the one master timer interval
+        masterTimerInterval = setInterval(masterTick, 1000);
+        
         updateTimerDisplay();
         setTimerBtns();
         updateTimerNavInfo();
