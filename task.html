@@ -1,107 +1,670 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Task Manager</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Manager</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for better theme integration */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for a more integrated look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* bg-gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* bg-gray-600 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* bg-gray-500 */
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-  <h1>Task Manager</h1>
-  <div id="currentTime"></div>
-  <div id="selectedDateDisplay" style="font-size:1.1em;color:#ffc107;text-align:center;margin-bottom:10px;"></div>
+<body class="bg-gray-900 text-white p-4 lg:p-8">
 
-  <div class="container-box">
-    <div class="task-column">
-      <form class="form-inline row g-2" onsubmit="handleTaskForm(event)">
-        <div class="col-md-5">
-          <input type="text" id="taskName" class="form-control" placeholder="Task Name" required />
-        </div>
-        <div class="col-md-3">
-          <input type="number" id="taskDuration" class="form-control" placeholder="Duration (min)" required />
-        </div>
-        <div class="col-md-3">
-          <div class="input-group">
-            <select id="taskCategory" class="form-select"></select>
-          </div>
-        </div>
-        <div class="col-md-1">
-          <button class="btn btn-success w-100">➕</button>
-        </div>
-      </form>
+    <header class="text-center">
+        <h1 class="text-4xl lg:text-5xl font-bold text-teal-400">Task Manager</h1>
+        <div id="currentTime" class="text-gray-400 mt-2 text-lg"></div>
+    </header>
+    
+    <div id="selectedDateDisplay" class="text-lg text-yellow-400 text-center mb-4"></div>
 
-      <div id="selectedDateLabel" style="font-size:1.1em;font-weight:500;margin:10px 0 0 0;color:var(--accent-color)"></div>
-      <ul id="taskList"></ul>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6 w-full max-w-7xl mx-auto">
+        <!-- Task Column -->
+        <main class="lg:col-span-2 space-y-6">
+            <form class="flex flex-col sm:flex-row items-center gap-3 bg-gray-800/50 p-4 rounded-xl" onsubmit="handleTaskForm(event)">
+                <input type="text" id="taskName" placeholder="Task Name" required class="w-full sm:flex-grow bg-gray-700 border-gray-600 placeholder-gray-400 text-white rounded-md px-4 py-2 focus:ring-teal-500 focus:border-teal-500 transition" />
+                <input type="number" id="taskDuration" placeholder="Duration (min)" required class="w-full sm:w-36 bg-gray-700 border-gray-600 placeholder-gray-400 text-white rounded-md px-4 py-2 focus:ring-teal-500 focus:border-teal-500 transition" />
+                <select id="taskCategory" class="w-full sm:w-40 bg-gray-700 border-gray-600 text-white rounded-md px-4 py-2 focus:ring-teal-500 focus:border-teal-500 transition"></select>
+                <button class="w-full sm:w-auto bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+            </form>
+
+            <div id="task-list-container" class="bg-gray-800/50 p-4 sm:p-6 rounded-xl">
+                <div id="selectedDateLabel" class="text-xl font-semibold text-gray-200 mb-4"></div>
+                <ul id="taskList" class="space-y-3"></ul>
+            </div>
+        </main>
+
+        <!-- Sidebar Column -->
+        <aside class="space-y-8">
+            <div id="taskSummaryContainer" class="bg-gray-800/50 p-6 rounded-xl">
+                <h3 class="text-lg font-semibold mb-4 text-gray-200">Task Summary</h3>
+                <div id="taskSummaryContent"></div>
+            </div>
+
+            <div id="calendarContainer" class="bg-gray-800/50 p-4 rounded-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <button id="prevMonth" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <span id="calendarMonth" class="text-lg font-semibold"></span>
+                    <button id="nextMonth" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+                <div id="calendarDays" class="grid grid-cols-7 text-center text-xs text-gray-400 mb-2"></div>
+                <div id="calendarDates"></div>
+            </div>
+
+            <div id="timerSection" class="bg-gray-800/50 p-6 rounded-xl">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-semibold text-gray-200 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        Countdown Timers
+                    </h3>
+                    <span id="timerNavInfo" class="text-sm text-gray-400"></span>
+                </div>
+                <div class="flex items-center justify-between mb-4" style="gap:8px;">
+                    <button id="timerPrev" class="p-2 rounded-full hover:bg-gray-700 transition-colors" title="Previous Timer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <span id="timerDisplay" class="font-mono text-4xl font-bold tracking-wider cursor-pointer" style="user-select:none;"></span>
+                    <button id="timerNext" class="p-2 rounded-full hover:bg-gray-700 transition-colors" title="Next Timer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+                <div class="flex justify-between items-center mb-4">
+                    <button id="removeTimerBtn" class="text-gray-500 hover:text-red-500 transition-colors" title="Remove Timer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                    <div class="flex justify-center gap-3" id="timerBtnGroup"></div>
+                    <button id="addTimerBtn" class="text-gray-500 hover:text-teal-400 transition-colors" title="Add Timer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                    </button>
+                </div>
+                <button id="stopSoundBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition-colors" style="display:none;">Stop Sound</button>
+                <audio id="timerEndSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+            </div>
+
+            <div class="bg-gray-800/50 p-6 rounded-xl">
+                <h3 class="text-lg font-semibold mb-4 text-gray-200">Categories</h3>
+                <div id="categoryList" class="space-y-2 mb-6"></div>
+                <hr class="border-gray-700" />
+                <form id="categoryForm" class="mt-6 space-y-4">
+                    <h4 class="font-semibold text-gray-300">New Category</h4>
+                    <input type="text" id="newCategoryName" placeholder="Category Name" required class="w-full bg-gray-700 border-gray-600 placeholder-gray-400 text-white rounded-md px-3 py-2 focus:ring-teal-500 focus:border-teal-500 transition">
+                    <div>
+                        <label class="text-sm text-gray-400 d-block mb-2">Choose Color:</label>
+                        <div id="colorPalette" class="flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+                    <button type="submit" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-md transition-colors">Create Category</button>
+                </form>
+            </div>
+        </aside>
     </div>
 
-    <div class="category-column">
-      <!-- Task Summary -->
-      <div id="taskSummaryContainer" class="mb-3 p-3" style="background: var(--card-color); border-radius: 10px; box-shadow: 0 2px 8px #0004; color: #fff;">
-        <h5 style="color: var(--accent-color); font-weight: 600; margin-bottom: 10px;">Task Summary</h5>
-        <div id="taskSummaryContent" style="font-size:1.05em;"></div>
-      </div>
-      <!-- End Task Summary -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script>
+    // --- Date-dependent Task Storage ---
+    function getTodayStr() {
+        const d = new Date();
+        return d.toISOString().slice(0, 10);
+    }
+    let selectedDate = getTodayStr();
+    let migrated = localStorage.getItem('tasksMigratedV2');
+    let oldTaskList = JSON.parse(localStorage.getItem("taskList")) || [];
+    let taskListByDate = JSON.parse(localStorage.getItem("taskListByDate")) || {};
 
-      <!-- Calendar View -->
-      <div id="calendarContainer" class="mt-4 p-3" style="background: var(--card-color); border-radius: 10px; box-shadow: 0 2px 8px #0004;">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <button id="prevMonth" class="btn btn-sm btn-outline-light px-2 py-0">&#8592;</button>
-          <span id="calendarMonth" style="font-weight: 500;"></span>
-          <button id="nextMonth" class="btn btn-sm btn-outline-light px-2 py-0">&#8594;</button>
-        </div>
+    if (!migrated && oldTaskList.length > 0) {
+        taskListByDate[selectedDate] = (taskListByDate[selectedDate] || []).concat(oldTaskList);
+        localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
+        localStorage.removeItem("taskList");
+        localStorage.setItem('tasksMigratedV2', '1');
+    }
 
-        <table class="table table-sm table-dark mb-0" style="border-radius:8px;overflow:hidden;">
-          <thead>
-            <tr id="calendarDays"></tr>
-          </thead>
-          <tbody id="calendarDates"></tbody>
-        </table>
-      </div>
-      <!-- End Calendar View -->
+    function getTaskList() {
+        return taskListByDate[selectedDate] || [];
+    }
+    function setTaskList(list) {
+        taskListByDate[selectedDate] = list;
+        localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
+    }
 
-      <div id="timerSection" style="margin-bottom: 18px;">
-        <div class="card p-3 bg-dark text-white" style="min-width: 200px; box-shadow: 0 2px 8px #0008; border-radius: 14px;">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <span style="font-weight: bold; font-size: 1.1em; letter-spacing: 1px;">⏱ Countdown Timers</span>
-            <span id="timerNavInfo" style="font-size:0.95em;color:#aaa;"></span>
-          </div>
-          <div class="d-flex align-items-center justify-content-between mb-2" style="gap:8px;">
-            <button id="timerPrev" class="btn btn-outline-light btn-sm" style="border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;" title="Previous Timer">&#8592;</button>
-            <span id="timerDisplay" style="font-size:2.1em; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 2px; cursor:pointer; user-select:none;min-width:140px;display:inline-block; text-align:center;"></span>
-            <button id="timerNext" class="btn btn-outline-light btn-sm" style="border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;" title="Next Timer">&#8594;</button>
-          </div>
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <button id="removeTimerBtn" class="btn btn-danger btn-sm" title="Remove Timer" style="border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">&#128465;</button>
-            <div class="d-flex justify-content-center gap-2 mb-2" id="timerBtnGroup"></div>
-            <button id="addTimerBtn" class="btn btn-success btn-sm" title="Add Timer" style="border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">+</button>
-          </div>
-          <!-- Stop Sound Button (hidden by default) -->
-          <button id="stopSoundBtn" class="btn btn-warning btn-sm w-100 mb-2" style="display:none;">Stop Sound</button>
-          <audio id="timerEndSound" src="sound-effect-old-phone.mp3" preload="auto"></audio>
-        </div>
-      </div>
+    // --- Category logic remains unchanged ---
+    let categories = JSON.parse(localStorage.getItem("categories")) || [
+        { name: "General", color: "#34d399" },
+        { name: "Essential", color: "#f87171" },
+        { name: "Resting", color: "#60a5fa" },
+        { name: "Coding", color: "#a78bfa" },
+    ];
+    function saveCategories() {
+        localStorage.setItem("categories", JSON.stringify(categories));
+    }
 
-      <div class="category-list" id="categoryList"></div>
-      <hr class="text-secondary" />
-      <form id="categoryForm" class="mt-3">
-        <div class="mb-2">
-          <input type="text" id="newCategoryName" class="form-control" placeholder="New Category Name" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label d-block mb-1">Choose Color:</label>
-          <div id="colorPalette" class="d-flex flex-wrap gap-2">
-            <!-- Color options rendered by JS -->
-          </div>
-          <input type="color" id="customColor" class="form-control form-control-color mt-2" title="Pick a custom color">
-        </div>
-        <button type="submit" class="btn btn-outline-light w-100">Create Category</button>
-      </form>
+    function updateCurrentTime() {
+        const now = new Date();
+        document.getElementById("currentTime").innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        renderTasks();
+    }
 
-    </div>
-  </div>
+    function updateSelectedDateLabel() {
+        const label = document.getElementById('selectedDateLabel');
+        const d = new Date(selectedDate);
+        // Adjust for timezone offset to show correct local date
+        const userTimezoneOffset = d.getTimezoneOffset() * 60000;
+        const localDate = new Date(d.getTime() + userTimezoneOffset);
+        label.textContent = `Tasks for ${localDate.toLocaleDateString(undefined, {month:'long',day:'numeric', year: 'numeric'})}`;
+    }
 
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <script src="main.js"></script>
+    // --- Collapse Completed Tasks Feature ---
+    let collapseCompleted = JSON.parse(localStorage.getItem('collapseCompleted')) || false;
+
+    function setCollapseCompleted(val) {
+        collapseCompleted = val;
+        localStorage.setItem('collapseCompleted', JSON.stringify(val));
+        renderTasks();
+    }
+
+    function renderCollapseCompletedBtn() {
+        let container = document.getElementById('task-list-container');
+        let btn = document.getElementById('collapseCompletedBtn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'collapseCompletedBtn';
+            btn.className = 'text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-md transition-colors float-right -mt-12';
+            container.insertBefore(btn, container.firstChild.nextSibling);
+        }
+        btn.textContent = collapseCompleted ? 'Show Completed' : 'Hide Completed';
+        btn.onclick = () => setCollapseCompleted(!collapseCompleted);
+    }
+
+    function renderTasks() {
+        renderCollapseCompletedBtn();
+        const ul = document.getElementById("taskList");
+        ul.innerHTML = "";
+        if (getTaskList().length === 0) {
+            ul.innerHTML = `<p class="text-gray-400 text-center py-8">No tasks for this day. Add one above!</p>`;
+        }
+        
+        let startTime = new Date();
+        let taskList = getTaskList();
+        taskList.forEach((task, index) => {
+            if (collapseCompleted && task.completed) return;
+            const li = document.createElement("li");
+            const cat = categories.find(c => c.name === task.category);
+            const categoryColor = cat ? cat.color : '#4b5563';
+
+            li.className = `flex items-center bg-gray-700/70 p-3 rounded-lg transition-all duration-300 ${task.completed ? 'opacity-50' : 'hover:bg-gray-700'}`;
+            li.style.borderLeft = `4px solid ${categoryColor}`;
+
+            const checkboxHTML = `
+                <button class="mr-3 flex-shrink-0">
+                    ${task.completed 
+                        ? `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>` 
+                        : `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500"><circle cx="12" cy="12" r="10"></circle></svg>`
+                    }
+                </button>`;
+
+            const endTime = new Date(startTime.getTime() + task.duration * 60000);
+            const hrs = Math.floor(task.duration / 60);
+            const mins = task.duration % 60;
+            const durationStr = `${hrs > 0 ? hrs + 'h ' : ''}${mins}m`;
+            let timeDetails = '';
+            if (!task.completed) {
+                timeDetails = `${durationStr} &mdash; Ends: ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                startTime = endTime;
+            } else {
+                timeDetails = `${durationStr}`;
+            }
+
+            li.innerHTML = `
+                ${checkboxHTML}
+                <div class="flex-grow flex items-center">
+                    <span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${categoryColor}"></span>
+                    <span class="task-name flex-grow ${task.completed ? 'line-through text-gray-400' : 'text-gray-200'}">${task.name}</span>
+                </div>
+                <span class="task-time text-sm text-gray-400 mx-4 hidden sm:inline">${timeDetails}</span>
+                <button class="delete-btn text-gray-500 hover:text-red-500 transition-colors ml-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            `;
+            
+            li.querySelector('button:first-child').onclick = () => {
+                task.completed = !task.completed;
+                setTaskList(taskList);
+                renderTasks();
+            };
+
+            li.querySelector('.delete-btn').onclick = () => {
+                taskList.splice(index, 1);
+                setTaskList(taskList);
+                renderTasks();
+            };
+            
+            ul.appendChild(li);
+        });
+        
+        renderTaskSummary();
+        updateSelectedDateLabel();
+    }
+
+    function renderTaskSummary() {
+        const summaryDiv = document.getElementById('taskSummaryContent');
+        if (!summaryDiv) return;
+        const taskList = getTaskList();
+        if (!taskList.length) {
+            summaryDiv.innerHTML = '<p class="text-gray-500">No tasks for this date.</p>';
+            return;
+        }
+        let totalMinutes = 0, completedMinutes = 0;
+        let catMap = {};
+        
+        categories.forEach(cat => {
+            catMap[cat.name] = { total: 0, completed: 0, color: cat.color };
+        });
+
+        taskList.forEach(task => {
+            totalMinutes += task.duration;
+            if (catMap[task.category]) {
+                catMap[task.category].total += task.duration;
+                if (task.completed) {
+                    completedMinutes += task.duration;
+                    catMap[task.category].completed += task.duration;
+                }
+            }
+        });
+        
+        const leftMinutes = totalMinutes - completedMinutes;
+        const percent = totalMinutes ? Math.round((completedMinutes / totalMinutes) * 100) : 0;
+        const fmt = m => {
+            if (m === 0) return '0m';
+            const h = Math.floor(m / 60);
+            const mins = m % 60;
+            return `${h > 0 ? `${h}h ` : ''}${mins > 0 ? `${mins}m` : ''}`.trim();
+        };
+
+        let byCategoryHTML = Object.entries(catMap)
+            .filter(([_, data]) => data.total > 0)
+            .map(([cat, data]) => `
+                <div class="text-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="w-2.5 h-2.5 rounded-full mr-2" style="background-color: ${data.color}"></span>
+                            <span>${cat}</span>
+                        </div>
+                        <span class="font-mono text-gray-400">${fmt(data.completed)} / ${fmt(data.total)}</span>
+                    </div>
+                </div>
+            `).join('');
+
+        summaryDiv.innerHTML = `
+            <div class="mb-4">
+                <div class="flex justify-between items-baseline mb-1">
+                    <span class="font-bold text-teal-400">Total Task Time:</span>
+                    <span class="text-lg font-mono">${fmt(totalMinutes)}</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                    <div class="bg-teal-500 h-2.5 rounded-full" style="width: ${percent}%"></div>
+                </div>
+                <div class="flex justify-between text-sm mt-2 text-gray-400">
+                    <span>Completed: <span class="text-green-400 font-medium">${fmt(completedMinutes)}</span></span>
+                    <span>Left: <span class="text-yellow-400 font-medium">${fmt(leftMinutes)}</span></span>
+                    <span class="font-bold">${percent}%</span>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-semibold mb-2 text-gray-300">By Category:</h4>
+                <div class="space-y-2">${byCategoryHTML}</div>
+            </div>
+        `;
+    }
+
+    function updateCategoryDropdown() {
+        const list = document.getElementById("categoryList");
+        list.innerHTML = categories.map((cat, idx) => `
+            <div class="flex items-center justify-between bg-gray-700/50 p-2 rounded-md">
+                <div class="flex items-center">
+                    <span class="w-3 h-3 rounded-full mr-3" style="background:${cat.color}"></span>
+                    <span class="text-sm">${cat.name}</span>
+                </div>
+                ${cat.name !== "General" ? `<button class="text-gray-500 hover:text-red-500 transition-colors" onclick="deleteCategory(${idx})"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>` : ""}
+            </div>
+        `).join("");
+
+        const dropdown = document.getElementById("taskCategory");
+        dropdown.innerHTML = categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join("");
+    }
+
+    function handleTaskForm(e) {
+        e.preventDefault();
+        const name = document.getElementById('taskName').value;
+        const duration = parseInt(document.getElementById('taskDuration').value);
+        const category = document.getElementById('taskCategory').value;
+        if (!name || isNaN(duration) || duration <= 0) {
+            // A more subtle notification could be used here instead of alert
+            console.error("Invalid task input");
+            return;
+        }
+        let taskList = getTaskList();
+        taskList.push({ name, duration, completed: false, category });
+        setTaskList(taskList);
+        renderTasks();
+        e.target.reset();
+    }
+
+    new Sortable(document.getElementById('taskList'), {
+        animation: 150,
+        onEnd: function(evt) {
+            let taskList = getTaskList();
+            const movedItem = taskList.splice(evt.oldIndex, 1)[0];
+            taskList.splice(evt.newIndex, 0, movedItem);
+            setTaskList(taskList);
+            renderTasks();
+        }
+    });
+
+    const paletteColors = ['#34d399', '#f87171', '#60a5fa', '#a78bfa', '#fbbf24', '#ec4899'];
+    let selectedColor = paletteColors[0];
+
+    function renderColorPalette() {
+        const container = document.getElementById("colorPalette");
+        container.innerHTML = paletteColors.map(color => `
+            <button type="button" class="w-6 h-6 rounded-full transition-transform transform hover:scale-110 ${selectedColor === color ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white' : ''}" style="background-color: ${color}" data-color="${color}"></button>
+        `).join("");
+
+        container.querySelectorAll('button').forEach(swatch => {
+            swatch.onclick = () => {
+                selectedColor = swatch.dataset.color;
+                renderColorPalette();
+            };
+        });
+    }
+
+    document.getElementById("categoryForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById("newCategoryName");
+        const name = nameInput.value.trim();
+        if (!name) return;
+
+        if (categories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
+            alert("Category already exists!");
+            return;
+        }
+
+        categories.push({ name, color: selectedColor });
+        saveCategories();
+        updateCategoryDropdown();
+        nameInput.value = "";
+    });
+
+    function deleteCategory(index) {
+        const catToDelete = categories[index].name;
+        let used = false;
+        for (const date in taskListByDate) {
+            if (Array.isArray(taskListByDate[date]) && taskListByDate[date].some(task => task.category === catToDelete)) {
+                used = true;
+                break;
+            }
+        }
+        if (used) {
+            alert("This category is used in tasks. Please reassign or delete those tasks first.");
+            return;
+        }
+        categories.splice(index, 1);
+        saveCategories();
+        updateCategoryDropdown();
+    }
+    window.deleteCategory = deleteCategory;
+
+    // --- Multi-Timer Logic (Functionality unchanged, styling updated in HTML/JS) ---
+    let timers = JSON.parse(localStorage.getItem('timers')) || [{ total: 0, left: 0, state: 'idle' }];
+    let activeTimerIdx = 0;
+    let timerInterval = null;
+
+    function saveTimers() { localStorage.setItem('timers', JSON.stringify(timers)); }
+    function updateTimerNavInfo() { document.getElementById('timerNavInfo').textContent = `Timer ${activeTimerIdx + 1} / ${timers.length}`; }
+
+    function updateTimerDisplay() {
+        const t = timers[activeTimerIdx];
+        const left = t.left;
+        const hrs = String(Math.floor(left / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((left % 3600) / 60)).padStart(2, '0');
+        const secs = String(left % 60).padStart(2, '0');
+        const display = document.getElementById('timerDisplay');
+        display.innerHTML = `<span class='timer-part' data-part='hrs'>${hrs}</span>:<span class='timer-part' data-part='mins'>${mins}</span>:<span class='timer-part' data-part='secs'>${secs}</span>`;
+        document.title = t.state === 'running' ? `${hrs}:${mins}:${secs} - Task Manager` : 'Task Manager';
+        updateTimerNavInfo();
+    }
+
+    function setTimerBtns() {
+        const btnGroup = document.getElementById('timerBtnGroup');
+        btnGroup.innerHTML = '';
+        const t = timers[activeTimerIdx];
+
+        const createButton = (title, icon, colorClass, onClick) => {
+            const btn = document.createElement('button');
+            btn.className = `p-2 rounded-full ${colorClass} text-white transition-transform transform hover:scale-110`;
+            btn.title = title;
+            btn.innerHTML = icon;
+            btn.onclick = onClick;
+            return btn;
+        };
+
+        const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg>`;
+        const pauseIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5 6.25a1.25 1.25 0 1 1 2.5 0v3.5a1.25 1.25 0 1 1-2.5 0v-3.5zm3.5 0a1.25 1.25 0 1 1 2.5 0v3.5a1.25 1.25 0 1 1-2.5 0v-3.5z"/></svg>`;
+        const resetIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>`;
+
+        if (t.state === 'idle' || t.state === 'paused') {
+            btnGroup.appendChild(createButton('Start', playIcon, 'bg-green-500 hover:bg-green-600', startTimer));
+        }
+        if (t.state === 'running') {
+            btnGroup.appendChild(createButton('Pause', pauseIcon, 'bg-yellow-500 hover:bg-yellow-600', pauseTimer));
+        }
+        if (t.state !== 'idle') {
+            btnGroup.appendChild(createButton('Reset', resetIcon, 'bg-red-500 hover:bg-red-600', resetTimer));
+        }
+    }
+
+    function startTimer() {
+        const t = timers[activeTimerIdx];
+        if (t.left <= 0) return;
+        t.state = 'running';
+        setTimerBtns();
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            t.left = Math.max(0, t.left - 1);
+            updateTimerDisplay();
+            if (t.left <= 0) {
+                clearInterval(timerInterval);
+                t.state = 'idle';
+                t.left = t.total;
+                updateTimerDisplay();
+                setTimerBtns();
+                document.getElementById('timerEndSound').play();
+                document.getElementById('stopSoundBtn').style.display = 'block';
+            }
+            saveTimers();
+        }, 1000);
+        saveTimers();
+    }
+
+    function pauseTimer() {
+        timers[activeTimerIdx].state = 'paused';
+        clearInterval(timerInterval);
+        setTimerBtns();
+        saveTimers();
+    }
+
+    function resetTimer() {
+        const t = timers[activeTimerIdx];
+        t.state = 'idle';
+        clearInterval(timerInterval);
+        t.left = t.total;
+        updateTimerDisplay();
+        setTimerBtns();
+        saveTimers();
+    }
+
+    function switchTimer(idx) {
+        if (idx < 0 || idx >= timers.length) return;
+        clearInterval(timerInterval);
+        activeTimerIdx = idx;
+        updateTimerDisplay();
+        setTimerBtns();
+        saveTimers();
+    }
+
+    function addTimer() {
+        timers.push({ total: 0, left: 0, state: 'idle' });
+        switchTimer(timers.length - 1);
+    }
+
+    function removeTimer() {
+        if (timers.length <= 1) return;
+        timers.splice(activeTimerIdx, 1);
+        if (activeTimerIdx >= timers.length) activeTimerIdx = timers.length - 1;
+        switchTimer(activeTimerIdx);
+    }
+
+    document.getElementById('timerPrev').onclick = () => switchTimer((activeTimerIdx - 1 + timers.length) % timers.length);
+    document.getElementById('timerNext').onclick = () => switchTimer((activeTimerIdx + 1) % timers.length);
+    document.getElementById('addTimerBtn').onclick = addTimer;
+    document.getElementById('removeTimerBtn').onclick = removeTimer;
+    
+    document.getElementById('timerDisplay').addEventListener('dblclick', function(e) {
+        if (!e.target.classList.contains('timer-part')) return;
+        const part = e.target.getAttribute('data-part');
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'w-12 bg-gray-700 text-center text-4xl font-bold rounded-md';
+        input.value = parseInt(e.target.textContent, 10);
+        e.target.replaceWith(input);
+        input.focus();
+        input.select();
+        const finishEdit = () => {
+            let val = parseInt(input.value, 10) || 0;
+            let t = timers[activeTimerIdx];
+            let hrs = Math.floor(t.left / 3600), mins = Math.floor((t.left % 3600) / 60), secs = t.left % 60;
+            if (part === 'hrs') hrs = val;
+            if (part === 'mins') mins = val;
+            if (part === 'secs') secs = val;
+            t.total = t.left = hrs * 3600 + mins * 60 + secs;
+            t.state = 'idle';
+            updateTimerDisplay();
+            setTimerBtns();
+            saveTimers();
+        };
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', ev => { if (ev.key === 'Enter') input.blur(); });
+    });
+
+    document.getElementById('stopSoundBtn').onclick = function() {
+        const sound = document.getElementById('timerEndSound');
+        sound.pause();
+        sound.currentTime = 0;
+        this.style.display = 'none';
+    };
+    document.getElementById('timerEndSound').addEventListener('ended', function() {
+        document.getElementById('stopSoundBtn').style.display = 'none';
+    });
+    
+    // --- Calendar Logic ---
+    const calendarDays = document.getElementById('calendarDays');
+    const calendarDates = document.getElementById('calendarDates');
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let calDate = new Date();
+    calDate.setDate(1);
+
+    function renderCalendar() {
+        document.getElementById('calendarMonth').textContent = calDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        calendarDays.innerHTML = dayNames.map(d => `<div>${d}</div>`).join('');
+        
+        const year = calDate.getFullYear();
+        const month = calDate.getMonth();
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0);
+        const startDate = new Date(monthStart);
+        startDate.setDate(startDate.getDate() - monthStart.getDay());
+        const endDate = new Date(monthEnd);
+        endDate.setDate(endDate.getDate() + (6 - monthEnd.getDay()));
+
+        let html = '';
+        let day = new Date(startDate);
+
+        while (day <= endDate) {
+            html += '<div class="grid grid-cols-7">';
+            for (let i = 0; i < 7; i++) {
+                const cloneDay = new Date(day);
+                const thisDateStr = cloneDay.toISOString().slice(0, 10);
+                const isCurrentMonth = cloneDay.getMonth() === month;
+                const isSelected = thisDateStr === selectedDate;
+                const isToday = cloneDay.toDateString() === new Date().toDateString();
+                const hasTasks = Array.isArray(taskListByDate[thisDateStr]) && taskListByDate[thisDateStr].length > 0;
+
+                let classes = 'w-9 h-9 flex items-center justify-center rounded-full transition-colors text-sm ';
+                if (!isCurrentMonth) classes += 'text-gray-600';
+                else if (isSelected) classes += 'bg-teal-500 text-white font-bold';
+                else if (isToday) classes += 'border border-teal-500/50';
+                else classes += 'hover:bg-gray-700';
+
+                html += `
+                    <div class="flex justify-center items-center h-10">
+                        <button data-date='${thisDateStr}' class="${classes}">
+                            ${cloneDay.getDate()}
+                        </button>
+                    </div>`;
+                day.setDate(day.getDate() + 1);
+            }
+            html += '</div>';
+        }
+        calendarDates.innerHTML = html;
+        calendarDates.querySelectorAll('button').forEach(cell => {
+            cell.onclick = function() {
+                selectedDate = this.getAttribute('data-date');
+                renderTasks();
+                renderCalendar();
+                updateSelectedDateLabel();
+            };
+        });
+    }
+
+    document.getElementById('prevMonth').onclick = () => { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); };
+    document.getElementById('nextMonth').onclick = () => { calDate.setMonth(calDate.getMonth() + 1); renderCalendar(); };
+
+    // --- Initial render ---
+    document.addEventListener('DOMContentLoaded', () => {
+        updateTimerDisplay();
+        setTimerBtns();
+        updateTimerNavInfo();
+        renderColorPalette();
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 60000);
+        updateCategoryDropdown();
+        renderTasks();
+        renderCalendar();
+    });
+    </script>
 </body>
 </html>
