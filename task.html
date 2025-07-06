@@ -101,20 +101,6 @@
                 <ul id="unfinishedTasksList" class="space-y-2 max-h-60 overflow-y-auto"></ul>
             </div>
 
-            <div id="calendarContainer" class="bg-gray-800/50 p-4 rounded-xl">
-                <div class="flex justify-between items-center mb-4">
-                    <button id="prevMonth" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </button>
-                    <span id="calendarMonth" class="text-lg font-semibold"></span>
-                    <button id="nextMonth" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                </div>
-                <div id="calendarDays" class="grid grid-cols-7 text-center text-xs text-gray-400 mb-2"></div>
-                <div id="calendarDates"></div>
-            </div>
-
             <div id="timerSection" class="bg-gray-800/50 p-6 rounded-xl">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="text-lg font-semibold text-gray-200 flex items-center gap-2">
@@ -143,6 +129,20 @@
                 </div>
                 <button id="stopSoundBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition-colors" style="display:none;">Stop Sound</button>
                 <audio id="timerEndSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+            </div>
+
+            <div id="calendarContainer" class="bg-gray-800/50 p-4 rounded-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <button id="prevMonth" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <span id="calendarMonth" class="text-lg font-semibold"></span>
+                    <button id="nextMonth" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+                <div id="calendarDays" class="grid grid-cols-7 text-center text-xs text-gray-400 mb-2"></div>
+                <div id="calendarDates"></div>
             </div>
 
             <div class="bg-gray-800/50 p-6 rounded-xl">
