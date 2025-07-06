@@ -654,50 +654,12 @@
         }
     }
 
-    function startTimer() {
-        const t = timers[activeTimerIdx];
-        if (t.left <= 0) return;
-        t.state = 'running';
-        setTimerBtns();
-        saveTimers();
-    }
-
-    function pauseTimer() {
-        const t = timers[activeTimerIdx];
-        t.state = 'paused';
-        setTimerBtns();
-        saveTimers();
-    }
-
-    function resetTimer() {
-        const t = timers[activeTimerIdx];
-        t.state = 'idle';
-        t.left = t.total;
-        updateTimerDisplay();
-        setTimerBtns();
-        saveTimers();
-    }
-
-    function switchTimer(idx) {
-        if (idx < 0 || idx >= timers.length) return;
-        activeTimerIdx = idx;
-        updateTimerDisplay();
-        setTimerBtns();
-    }
-
-    function addTimer() {
-        timers.push({ total: 0, left: 0, state: 'idle' });
-        switchTimer(timers.length - 1);
-        saveTimers();
-    }
-
-    function removeTimer() {
-        if (timers.length <= 1) return;
-        timers.splice(activeTimerIdx, 1);
-        if (activeTimerIdx >= timers.length) activeTimerIdx = timers.length - 1;
-        switchTimer(activeTimerIdx);
-        saveTimers();
-    }
+    function startTimer() { timers[activeTimerIdx].state = 'running'; setTimerBtns(); saveTimers(); }
+    function pauseTimer() { timers[activeTimerIdx].state = 'paused'; setTimerBtns(); saveTimers(); }
+    function resetTimer() { const t = timers[activeTimerIdx]; t.state = 'idle'; t.left = t.total; updateTimerDisplay(); setTimerBtns(); saveTimers(); }
+    function switchTimer(idx) { if (idx < 0 || idx >= timers.length) return; activeTimerIdx = idx; updateTimerDisplay(); setTimerBtns(); }
+    function addTimer() { timers.push({ total: 0, left: 0, state: 'idle' }); switchTimer(timers.length - 1); saveTimers(); }
+    function removeTimer() { if (timers.length <= 1) return; timers.splice(activeTimerIdx, 1); if (activeTimerIdx >= timers.length) activeTimerIdx = timers.length - 1; switchTimer(activeTimerIdx); saveTimers(); }
 
     document.getElementById('timerPrev').onclick = () => switchTimer((activeTimerIdx - 1 + timers.length) % timers.length);
     document.getElementById('timerNext').onclick = () => switchTimer((activeTimerIdx + 1) % timers.length);
@@ -731,15 +693,8 @@
         input.addEventListener('keydown', ev => { if (ev.key === 'Enter') input.blur(); });
     });
 
-    document.getElementById('stopSoundBtn').onclick = function() {
-        const sound = document.getElementById('timerEndSound');
-        sound.pause();
-        sound.currentTime = 0;
-        this.style.display = 'none';
-    };
-    document.getElementById('timerEndSound').addEventListener('ended', function() {
-        document.getElementById('stopSoundBtn').style.display = 'none';
-    });
+    document.getElementById('stopSoundBtn').onclick = function() { const sound = document.getElementById('timerEndSound'); sound.pause(); sound.currentTime = 0; this.style.display = 'none'; };
+    document.getElementById('timerEndSound').addEventListener('ended', function() { document.getElementById('stopSoundBtn').style.display = 'none'; });
     
     // --- Calendar Logic ---
     const calendarDays = document.getElementById('calendarDays');
