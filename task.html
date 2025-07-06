@@ -674,15 +674,20 @@
     let selectedColor = paletteColors[0];
 
     function renderColorPalette() {
-        const container = document.getElementById("colorPalette");
-        container.innerHTML = paletteColors.map(color => `
-            <button type="button" class="w-6 h-6 rounded-full transition-transform transform hover:scale-110 ${selectedColor === color ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white' : ''}" style="background-color: ${color}" data-color="${color}"></button>
-        `).join("");
-
-        container.querySelectorAll('button').forEach(swatch => {
-            swatch.onclick = () => {
-                selectedColor = swatch.dataset.color;
-                renderColorPalette();
+        const palette = document.getElementById('colorPalette');
+        if (!palette) return;
+        const colors = [
+            "#34d399", "#f87171", "#60a5fa", "#a78bfa", "#facc15", "#fb923c",
+            "#e879f9", "#22d3ee", "#818cf8", "#c084fc", "#f472b6", "#9ca3af"
+        ];
+        palette.innerHTML = colors.map(color => `
+            <div class="w-8 h-8 rounded-full cursor-pointer border-2 border-transparent hover:border-white transition" style="background-color: ${color};" data-color="${color}"></div>
+        `).join('');
+        palette.querySelectorAll('div').forEach(div => {
+            div.onclick = () => {
+                palette.querySelectorAll('div').forEach(c => c.classList.remove('border-teal-400'));
+                div.classList.add('border-teal-400');
+                document.getElementById('newCategoryName').dataset.selectedColor = div.dataset.color;
             };
         });
     }
