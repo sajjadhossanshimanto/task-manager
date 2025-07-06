@@ -1112,12 +1112,20 @@
                 onEnd: (evt) => {
                     // Only handle reordering within the same column
                     if (evt.from === evt.to) {
+                        // Reordering within the same column
                         const column = kanbanData[colIdx];
                         const [movedTask] = column.tasks.splice(evt.oldIndex, 1);
                         column.tasks.splice(evt.newIndex, 0, movedTask);
                         saveKanbanData();
                     } else {
-                        // Optional: handle moving between columns if you allow it
+                        // Moving between columns
+                        const fromColIdx = Array.from(taskLists).indexOf(evt.from);
+                        const toColIdx = Array.from(taskLists).indexOf(evt.to);
+                        if (fromColIdx !== -1 && toColIdx !== -1) {
+                            const [movedTask] = kanbanData[fromColIdx].tasks.splice(evt.oldIndex, 1);
+                            kanbanData[toColIdx].tasks.splice(evt.newIndex, 0, movedTask);
+                            saveKanbanData();
+                        }
                     }
                 }
             });
