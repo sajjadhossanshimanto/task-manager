@@ -64,6 +64,14 @@
                 <div id="taskSummaryContent"></div>
             </div>
 
+            <!-- New Unfinished Tasks Container -->
+            <div id="unfinishedTasksContainer" class="bg-gray-800/50 p-6 rounded-xl">
+                <h3 class="text-lg font-semibold mb-4 text-gray-200">Past Unfinished Tasks</h3>
+                <ul id="unfinishedTasksList" class="space-y-2 max-h-60 overflow-y-auto">
+                    <!-- Unfinished tasks will be rendered here by JavaScript -->
+                </ul>
+            </div>
+
             <div id="calendarContainer" class="bg-gray-800/50 p-4 rounded-xl">
                 <div class="flex justify-between items-center mb-4">
                     <button id="prevMonth" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
@@ -303,6 +311,7 @@
         });
         
         renderTaskSummary();
+        renderUnfinishedTasks(); // Refresh unfinished list whenever tasks change
         updateSelectedDateLabel();
     }
 
@@ -375,6 +384,85 @@
                 <div class="space-y-2">${byCategoryHTML}</div>
             </div>
         `;
+    }
+
+    function renderUnfinishedTasks() {
+        const container = document.getElementById('unfinishedTasksList');
+        if (!container) return;
+
+        container.innerHTML = '';
+        let allPastUnfinished = [];
+        const todayStr = getTodayStr();
+
+        // Collect all unfinished tasks from dates before today
+        Object.keys(taskListByDate).forEach(dateStr => {
+            if (dateStr < todayStr) {
+                const tasksOnDate = taskListByDate[dateStr];
+                tasksOnDate.forEach(task => {
+                    if (!task.completed) {
+                        allPastUnfinished.push({ ...task, originalDate: dateStr });
+                    }
+                });
+            }
+        });
+
+        if (allPastUnfinished.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">No unfinished tasks from previous days.</p>';
+            return;
+        }
+        
+        allPastUnfinished.sort((a, b) => new Date(a.originalDate) - new Date(b.originalDate));
+
+        allPastUnfinished.forEach(taskToMove => {
+            const li = document.createElement('li');
+            li.className = 'flex items-center justify-between bg-gray-700/50 p-2 rounded-md text-sm';
+            
+            const taskDate = new Date(taskToMove.originalDate + 'T00:00:00');
+            const dateDisplay = taskDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'flex-grow overflow-hidden whitespace-nowrap overflow-ellipsis pr-2';
+            contentDiv.innerHTML = `
+                <span class="font-medium text-gray-300">${taskToMove.name}</span>
+                <span class="text-xs text-gray-500 ml-2">(${dateDisplay})</span>
+            `;
+
+            const addButton = document.createElement('button');
+            addButton.className = 'text-teal-400 hover:text-teal-300 transition-colors p-1 flex-shrink-0';
+            addButton.title = "Add to current date's tasks";
+            addButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+            
+            addButton.addEventListener('click', () => {
+                const currentTasks = getTaskList();
+                const newTask = {
+                    name: taskToMove.name,
+                    duration: taskToMove.duration,
+                    category: taskToMove.category,
+                    completed: false
+                };
+                currentTasks.push(newTask);
+                setTaskList(currentTasks);
+
+                const originalTasks = taskListByDate[taskToMove.originalDate];
+                const taskIndexInOldList = originalTasks.findIndex(t => 
+                    t.name === taskToMove.name && 
+                    t.duration === taskToMove.duration && 
+                    t.category === taskToMove.category &&
+                    t.completed === false
+                );
+                if (taskIndexInOldList > -1) {
+                    originalTasks.splice(taskIndexInOldList, 1);
+                }
+                
+                localStorage.setItem("taskListByDate", JSON.stringify(taskListByDate));
+
+                renderTasks();
+            });
+
+            li.appendChild(contentDiv);
+            li.appendChild(addButton);
+            container.appendChild(li);
+        });
     }
 
     function updateCategoryDropdown() {
