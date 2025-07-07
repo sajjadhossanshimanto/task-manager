@@ -452,16 +452,37 @@
 
             li.innerHTML = `${checkboxHTML}<div class="flex-grow flex items-center"><span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${categoryColor}"></span><span class="task-name flex-grow ${task.completed ? 'line-through text-gray-400' : 'text-gray-200'}">${task.name}</span></div><span class="task-time text-sm text-gray-400 mx-4 hidden sm:inline">${timeDetails}</span><button class="delete-btn text-gray-500 hover:text-red-500 transition-colors ml-auto"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>`;
             
-            li.querySelector('button:first-child').onclick = () => { task.completed = !task.completed; setTaskList(taskList); renderTasks(); };
+            li.querySelector('button:first-child').onclick = () => {
+                task.completed = !task.completed;
+
+                // If a moved task is completed, update the original as well
+                if (task.completed && task.originalDate && task.originalIndex !== undefined) {
+                    const originalTasks = taskListByDate[task.originalDate];
+                    if (originalTasks && originalTasks[task.originalIndex]) {
+                        const originalTask = originalTasks[task.originalIndex];
+                        // Sanity check to ensure we are updating the correct task
+                        if (originalTask.name === task.name && !originalTask.completed) {
+                            originalTask.completed = true;
+                        }
+                    }
+                }
+                
+                setTaskList(taskList);
+                saveTaskList(); // This now saves modifications to both current and original tasks
+                renderAll(); // Rerender everything to update all UI components
+            };
+            
             li.querySelector('.delete-btn').onclick = () => {
-                // If this is a recurring task, remember to skip it for this date
                 if (task.recurringId) {
                     skippedRecurringTasks.push({ recurringId: task.recurringId, date: selectedDate });
                     saveSkippedRecurringTasks();
                 }
+                // Note: Deleting a moved task from the current day does NOT affect the original.
+                // It just removes it from the current day's view.
                 taskList.splice(index, 1);
                 setTaskList(taskList);
-                renderTasks();
+                saveTaskList();
+                renderAll(); // Use renderAll to ensure all lists and summaries are updated
             };
             ul.appendChild(li);
         });
@@ -542,83 +563,109 @@
         `;
     }
 
-    function renderUnfinishedTasks() {
-        const container = document.getElementById('unfinishedTasksList');
-        if (!container) return;
+function renderUnfinishedTasks() {
+    const container = document.getElementById('unfinishedTasksList');
+    if (!container) return;
 
-        container.innerHTML = '';
-        let allPastUnfinished = [];
-        const todayStr = getTodayStr();
+    container.innerHTML = '';
+    let allPastUnfinished = [];
+    const todayStr = getTodayStr();
+    const currentTasks = getTaskList(); // Get today's list once for checking
 
-        Object.keys(taskListByDate).forEach(dateStr => {
-            if (dateStr < todayStr) {
-                const tasksOnDate = taskListByDate[dateStr];
-                tasksOnDate.forEach(task => {
-                    if (!task.completed) {
-                        allPastUnfinished.push({ ...task, originalDate: dateStr });
-                    }
-                });
-            }
-        });
-
-        if (allPastUnfinished.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">No unfinished tasks from previous days.</p>';
-            return;
+    // Step 1: Gather all past unfinished tasks and assign a unique reference (date + index)
+    Object.keys(taskListByDate).forEach(dateStr => {
+        if (dateStr < todayStr) {
+            const tasksOnDate = taskListByDate[dateStr];
+            tasksOnDate.forEach((task, index) => {
+                if (!task.completed) {
+                    allPastUnfinished.push({
+                        ...task,
+                        originalDate: dateStr,
+                        originalIndex: index // The key for reliable identification
+                    });
+                }
+            });
         }
+    });
+
+    if (allPastUnfinished.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm">No unfinished tasks from previous days.</p>';
+        return;
+    }
+    
+    allPastUnfinished.sort((a, b) => new Date(a.originalDate) - new Date(b.originalDate));
+
+    // Step 2: Render each unfinished task with the correct button
+    allPastUnfinished.forEach(taskToMove => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center justify-between bg-gray-700/50 p-2 rounded-md text-sm';
         
-        allPastUnfinished.sort((a, b) => new Date(a.originalDate) - new Date(b.originalDate));
+        const taskDate = new Date(taskToMove.originalDate + 'T00:00:00');
+        const dateDisplay = taskDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
-        allPastUnfinished.forEach(taskToMove => {
-            const li = document.createElement('li');
-            li.className = 'flex items-center justify-between bg-gray-700/50 p-2 rounded-md text-sm';
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'flex-grow overflow-hidden whitespace-nowrap overflow-ellipsis pr-2';
+        contentDiv.innerHTML = `
+            <span class="font-medium text-gray-300">${taskToMove.name}</span>
+            <span class="text-xs text-gray-500 ml-2">(${dateDisplay})</span>
+        `;
+
+        // Check if this specific task instance is already in today's list
+        const isAlreadyAdded = currentTasks.some(t => 
+            t.originalDate === taskToMove.originalDate && t.originalIndex === taskToMove.originalIndex
+        );
+
+        const actionButton = document.createElement('button');
+        actionButton.className = 'transition-colors p-1 flex-shrink-0';
+        
+        if (isAlreadyAdded) {
+            // Task is already added -> Show a 'remove' icon (minus)
+            actionButton.classList.add('text-gray-500', 'hover:text-yellow-400');
+            actionButton.title = "Remove from current date's tasks";
+            actionButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
             
-            const taskDate = new Date(taskToMove.originalDate + 'T00:00:00');
-            const dateDisplay = taskDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'flex-grow overflow-hidden whitespace-nowrap overflow-ellipsis pr-2';
-            contentDiv.innerHTML = `
-                <span class="font-medium text-gray-300">${taskToMove.name}</span>
-                <span class="text-xs text-gray-500 ml-2">(${dateDisplay})</span>
-            `;
-
-            const addButton = document.createElement('button');
-            addButton.className = 'text-teal-400 hover:text-teal-300 transition-colors p-1 flex-shrink-0';
-            addButton.title = "Add to current date's tasks";
-            addButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+            actionButton.addEventListener('click', () => {
+                let tasks = getTaskList();
+                // Find and remove the task using its unique origin reference
+                const taskIndexOnCurrentDay = tasks.findIndex(t => 
+                    t.originalDate === taskToMove.originalDate && t.originalIndex === taskToMove.originalIndex
+                );
+                if (taskIndexOnCurrentDay > -1) {
+                    tasks.splice(taskIndexOnCurrentDay, 1);
+                    setTaskList(tasks);
+                    saveTaskList();
+                    renderAll(); // Rerender to update main list and this list
+                }
+            });
+        } else {
+            // Task is not yet added -> Show an 'add' icon (plus)
+            actionButton.classList.add('text-teal-400', 'hover:text-teal-300');
+            actionButton.title = "Add to current date's tasks";
+            actionButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
             
-            addButton.addEventListener('click', () => {
+            actionButton.addEventListener('click', () => {
                 const currentTasks = getTaskList();
+                // Add the task, embedding its origin reference
                 const newTask = {
                     name: taskToMove.name,
                     duration: taskToMove.duration,
                     category: taskToMove.category,
-                    completed: false
+                    completed: false,
+                    originalDate: taskToMove.originalDate,
+                    originalIndex: taskToMove.originalIndex
                 };
                 currentTasks.push(newTask);
                 setTaskList(currentTasks);
-
-                const originalTasks = taskListByDate[taskToMove.originalDate];
-                const taskIndexInOldList = originalTasks.findIndex(t => 
-                    t.name === taskToMove.name && 
-                    t.duration === taskToMove.duration && 
-                    t.category === taskToMove.category &&
-                    t.completed === false
-                );
-                if (taskIndexInOldList > -1) {
-                    originalTasks.splice(taskIndexInOldList, 1);
-                }
-                
                 saveTaskList();
-                renderTasks();
+                renderAll(); // Rerender to update button and main list
             });
+        }
 
-            li.appendChild(contentDiv);
-            li.appendChild(addButton);
-            container.appendChild(li);
-        });
-    }
-
+        li.appendChild(contentDiv);
+        li.appendChild(actionButton);
+        container.appendChild(li);
+    });
+}
     function updateCategoryDropdowns() {
         const taskCategoryDropdown = document.getElementById("taskCategory");
         const recurringCategoryDropdown = document.getElementById("recurringTaskCategory");
