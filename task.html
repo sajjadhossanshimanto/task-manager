@@ -179,9 +179,9 @@
 
             <div id="timerSection" class="bg-gray-800/50 p-6 rounded-xl">
                 <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-lg font-semibold text-gray-200 flex items-center gap-2">
+                    <h3 id="timerNameContainer" class="text-lg font-semibold text-gray-200 flex items-center gap-2 cursor-pointer" title="Double-click to edit name">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        Countdown Timers
+                        <span id="timerNameText">Countdown timers</span>
                     </h3>
                     <span id="timerNavInfo" class="text-sm text-gray-400"></span>
                 </div>
@@ -329,7 +329,7 @@
         { name: "Resting", color: "#60a5fa" }, { name: "Coding", color: "#a78bfa" },
     ];
     let recurringTasks = JSON.parse(localStorage.getItem("recurringTasks")) || [];
-    let timers = JSON.parse(localStorage.getItem('timers')) || [{ total: 0, left: 0, state: 'idle' }];
+    let timers = JSON.parse(localStorage.getItem('timers')) || [{ name: 'Default Timer', total: 0, left: 0, state: 'idle' }];
     let kanbanData = JSON.parse(localStorage.getItem("kanbanData")) || [
         { id: 'col-1', title: 'To Do', tasks: [{id: 'task-1', content: 'Plan project phases'}] },
         { id: 'col-2', title: 'In Progress', tasks: [] }
@@ -949,12 +949,14 @@ function renderUnfinishedTasks() {
         const display = document.getElementById('timerDisplay');
         display.innerHTML = `<span class='timer-part' data-part='hrs'>${hrs}</span>:<span class='timer-part' data-part='mins'>${mins}</span>:<span class='timer-part' data-part='secs'>${secs}</span>`;
         
+        // Update document and timer name titles
+        document.getElementById('timerNameText').textContent = t.name;
         if (t.state === 'running') {
-            document.title = `${hrs}:${mins}:${secs} - Task Manager`;
+            document.title = `${t.name} - ${hrs}:${mins}:${secs}`;
         } else if (document.title !== 'Task Manager') {
             const anyTimerRunning = timers.some(timer => timer.state === 'running');
             if (!anyTimerRunning) {
-                 document.title = 'Task Manager';
+                document.title = 'Task Manager';
             }
         }
         updateTimerNavInfo();
@@ -992,8 +994,17 @@ function renderUnfinishedTasks() {
     function startTimer() { timers[activeTimerIdx].state = 'running'; setTimerBtns(); saveTimers(); }
     function pauseTimer() { timers[activeTimerIdx].state = 'paused'; setTimerBtns(); saveTimers(); }
     function resetTimer() { const t = timers[activeTimerIdx]; t.state = 'idle'; t.left = t.total; updateTimerDisplay(); setTimerBtns(); saveTimers(); }
-    function switchTimer(idx) { if (idx < 0 || idx >= timers.length) return; activeTimerIdx = idx; updateTimerDisplay(); setTimerBtns(); }
-    function addTimer() { timers.push({ total: 0, left: 0, state: 'idle' }); switchTimer(timers.length - 1); saveTimers(); }
+    function switchTimer(idx) { 
+        if (idx < 0 || idx >= timers.length) return; 
+        activeTimerIdx = idx; 
+        updateTimerDisplay(); 
+        setTimerBtns(); 
+    }
+    function addTimer() { 
+        timers.push({ name: `Timer ${timers.length + 1}`, total: 0, left: 0, state: 'idle' }); 
+        switchTimer(timers.length - 1); 
+        saveTimers(); 
+    }
     function removeTimer() { if (timers.length <= 1) return; timers.splice(activeTimerIdx, 1); if (activeTimerIdx >= timers.length) activeTimerIdx = timers.length - 1; switchTimer(activeTimerIdx); saveTimers(); }
 
     document.getElementById('timerPrev').onclick = () => switchTimer((activeTimerIdx - 1 + timers.length) % timers.length);
@@ -1440,9 +1451,43 @@ function renderUnfinishedTasks() {
         eventForm.reset();
     });
 
+    // --- timer logic ---
+    function handleTimerNameEdit() {
+        const nameSpan = document.getElementById('timerNameText');
+        const oldName = timers[activeTimerIdx].name;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = oldName;
+        input.className = 'bg-gray-700 w-full text-lg font-semibold rounded-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500';
+
+        nameSpan.replaceWith(input);
+        input.focus();
+        input.select();
+
+        const saveEdit = () => {
+            const newName = input.value.trim();
+            if (newName && newName !== oldName) {
+                timers[activeTimerIdx].name = newName;
+                saveTimers();
+            }
+            input.replaceWith(nameSpan);
+            updateTimerDisplay(); // Redraw to show the new (or old) name
+        };
+
+        input.addEventListener('blur', saveEdit);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') {
+                input.value = oldName; // Revert changes
+                input.blur();
+            }
+        });
+    }
+
     // --- Initial Page Load ---
     document.addEventListener('DOMContentLoaded', () => {
         masterTimerInterval = setInterval(masterTick, 1000);
+        document.getElementById('timerNameContainer').addEventListener('dblclick', handleTimerNameEdit);
         
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const weeklyOptionsContainer = document.getElementById('weeklyOptions').querySelector('div');
