@@ -179,11 +179,16 @@
 
             <div id="timerSection" class="bg-gray-800/50 p-6 rounded-xl">
                 <div class="flex items-center justify-between mb-3">
-                    <h3 id="timerNameContainer" class="text-lg font-semibold text-gray-200 flex items-center gap-2 cursor-pointer" title="Double-click to edit name">
+                    <h3 id="timerNameContainer" class="text-lg font-semibold text-gray-200 flex items-center justify-between gap-2 w-full">
+                        <span class="flex items-center gap-2 cursor-pointer" title="Double-click to edit name">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        <span id="timerNameText">Countdown timers</span>
+                            <span id="timerNameText"></span>
+                        </span>
+                        <span id="timerNavInfo" class="text-sm text-gray-400"></span>
                     </h3>
-                    <span id="timerNavInfo" class="text-sm text-gray-400"></span>
+                    <button id="timerSettingsBtn" class="text-gray-400 hover:text-teal-400 p-1 rounded-full" title="Timer Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V15a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </button>
                 </div>
                 <div class="flex items-center justify-between mb-4" style="gap:8px;">
                     <button id="timerPrev" class="p-2 rounded-full hover:bg-gray-700 transition-colors" title="Previous Timer">
@@ -194,6 +199,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                 </div>
+                <div id="lapCountDisplay" class="text-center text-teal-400 text-sm font-mono mt-1"></div>
                 <div class="flex justify-between items-center mb-4">
                     <button id="removeTimerBtn" class="text-gray-500 hover:text-red-500 transition-colors" title="Remove Timer">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
@@ -310,6 +316,41 @@
         </div>
     </div>
 
+    <!-- timer setting modal -->
+    <div id="timerSettingsModal" class="modal-backdrop">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-teal-400">Timer Settings</h2>
+                <button id="closeTimerSettingsBtn" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <label for="repeatToggle" class="font-medium text-gray-200">Repeat Timer</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="repeatToggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-teal-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                    </label>
+                </div>
+                <div id="repeatCountContainer" class="hidden">
+                    <label for="repeatCount" class="block text-sm font-medium text-gray-300 mb-2">Number of Repetitions (0 for ∞)</label>
+                    <input type="number" id="repeatCount" min="0" value="0" class="w-full bg-gray-700 border-gray-600 placeholder-gray-400 text-white rounded-md px-4 py-2 focus:ring-teal-500 focus:border-teal-500 transition">
+                </div>
+                <hr class="border-gray-700" />
+                <div>
+                    <label for="alarmVolume" class="block text-sm font-medium text-gray-300 mb-2">Alarm Volume</label>
+                    <div class="flex items-center gap-4">
+                        <input id="alarmVolume" type="range" min="0" max="100" value="100" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        <span id="alarmVolumeLabel" class="font-mono text-gray-400 w-12 text-right">100%</span>
+                    </div>
+                </div>
+                <div>
+                    <label for="alarmDuration" class="block text-sm font-medium text-gray-300 mb-2">Alarm Duration (seconds)</label>
+                    <input type="number" id="alarmDuration" min="1" value="10" class="w-full bg-gray-700 border-gray-600 placeholder-gray-400 text-white rounded-md px-4 py-2 focus:ring-teal-500 focus:border-teal-500 transition">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
     // --- Date-dependent Task Storage ---
@@ -329,7 +370,19 @@
         { name: "Resting", color: "#60a5fa" }, { name: "Coding", color: "#a78bfa" },
     ];
     let recurringTasks = JSON.parse(localStorage.getItem("recurringTasks")) || [];
-    let timers = JSON.parse(localStorage.getItem('timers')) || [{ name: 'Default Timer', total: 0, left: 0, state: 'idle' }];
+    let timers = JSON.parse(localStorage.getItem('timers')) || [{ 
+        name: 'Default Timer', 
+        total: 0, 
+        left: 0, 
+        state: 'idle',
+        lap: 1,
+        settings: {
+            repeat: false,
+            repeatCount: Infinity,
+            volume: 100,
+            alarmDuration: 10
+        }
+    }];
     let kanbanData = JSON.parse(localStorage.getItem("kanbanData")) || [
         { id: 'col-1', title: 'To Do', tasks: [{id: 'task-1', content: 'Plan project phases'}] },
         { id: 'col-2', title: 'In Progress', tasks: [] }
@@ -914,13 +967,40 @@
                 timer.left = Math.max(0, timer.left - 1);
 
                 if (timer.left <= 0) {
-                    timer.state = 'idle';
-                    timer.left = timer.total;
-                    
+                    const sound = document.getElementById('timerEndSound');
+                    sound.volume = timer.settings.volume / 100;
+                    sound.play();
+
                     if (index === activeTimerIdx) {
-                        document.getElementById('timerEndSound').play();
-                        document.getElementById('stopSoundBtn').style.display = 'block';
+                        const stopSoundBtn = document.getElementById('stopSoundBtn');
+                        stopSoundBtn.style.display = 'block';
+                        const soundTimeout = setTimeout(() => {
+                            sound.pause();
+                            sound.currentTime = 0;
+                            if (stopSoundBtn.style.display === 'block') {
+                            stopSoundBtn.style.display = 'none';
+                            }
+                        }, timer.settings.alarmDuration * 1000);
+                        
+                        stopSoundBtn.onclick = () => {
+                            sound.pause();
+                            sound.currentTime = 0;
+                            stopSoundBtn.style.display = 'none';
+                            clearTimeout(soundTimeout);
+                        };
+                    }
+                    
+                    const repeatCount = timer.settings.repeatCount === 0 ? Infinity : timer.settings.repeatCount;
+                    if (timer.settings.repeat && timer.lap < repeatCount) {
+                        timer.lap++;
+                        timer.left = timer.total;
+                    } else {
+                    timer.state = 'idle';
+                        timer.lap = 1; // Reset laps
+                    timer.left = timer.total;
+                    if (index === activeTimerIdx) {
                         setTimerBtns();
+                        }
                     }
                 }
                 
@@ -960,6 +1040,17 @@
                 document.title = 'Task Manager';
             }
         }
+
+        // Lap Counter Logic
+        const lapDisplay = document.getElementById('lapCountDisplay');
+        if (t.settings.repeat) {
+            const repeatCount = t.settings.repeatCount === 0 ? '∞' : t.settings.repeatCount;
+            lapDisplay.textContent = `Lap: ${t.lap}/${repeatCount}`;
+            lapDisplay.style.display = 'block';
+        } else {
+            lapDisplay.style.display = 'none';
+        }
+
         updateTimerNavInfo();
     }
 
@@ -1002,11 +1093,34 @@
         setTimerBtns(); 
     }
     function addTimer() { 
-        timers.push({ name: `Timer ${timers.length + 1}`, total: 0, left: 0, state: 'idle' }); 
+        timers.push({ 
+            name: `Timer ${timers.length + 1}`, 
+            total: 0, 
+            left: 0, 
+            state: 'idle',
+            lap: 1,
+            settings: {
+                repeat: false,
+                repeatCount: Infinity,
+                volume: 100,
+                alarmDuration: 10
+            }
+        }); 
         switchTimer(timers.length - 1); 
         saveTimers(); 
     }
-    function removeTimer() { if (timers.length <= 1) return; timers.splice(activeTimerIdx, 1); if (activeTimerIdx >= timers.length) activeTimerIdx = timers.length - 1; switchTimer(activeTimerIdx); saveTimers(); }
+    function removeTimer() { 
+        if (timers.length <= 1) {
+            alert("Cannot remove the last timer.");
+            return;
+        }; 
+        timers.splice(activeTimerIdx, 1); 
+        if (activeTimerIdx >= timers.length) {
+            activeTimerIdx = timers.length - 1;
+        } 
+        switchTimer(activeTimerIdx); 
+        saveTimers(); 
+    }
 
     document.getElementById('timerPrev').onclick = () => switchTimer((activeTimerIdx - 1 + timers.length) % timers.length);
     document.getElementById('timerNext').onclick = () => switchTimer((activeTimerIdx + 1) % timers.length);
@@ -1042,6 +1156,93 @@
 
     document.getElementById('stopSoundBtn').onclick = function() { const sound = document.getElementById('timerEndSound'); sound.pause(); sound.currentTime = 0; this.style.display = 'none'; };
     document.getElementById('timerEndSound').addEventListener('ended', function() { document.getElementById('stopSoundBtn').style.display = 'none'; });
+
+    // --- Timer Settings Modal Logic ---
+    const timerSettingsModal = document.getElementById('timerSettingsModal');
+    const timerSettingsBtn = document.getElementById('timerSettingsBtn');
+    const closeTimerSettingsBtn = document.getElementById('closeTimerSettingsBtn');
+
+    // Controls
+    const repeatToggle = document.getElementById('repeatToggle');
+    const repeatCountContainer = document.getElementById('repeatCountContainer');
+    const repeatCountInput = document.getElementById('repeatCount');
+    const alarmVolumeSlider = document.getElementById('alarmVolume');
+    const alarmVolumeLabel = document.getElementById('alarmVolumeLabel');
+    const alarmDurationInput = document.getElementById('alarmDuration');
+
+    function openTimerSettings() {
+        populateTimerSettings();
+        timerSettingsModal.style.display = 'flex';
+    }
+
+    function closeTimerSettings() {
+        timerSettingsModal.style.display = 'none';
+    }
+
+    function populateTimerSettings() {
+        const settings = timers[activeTimerIdx].settings;
+        
+        repeatToggle.checked = settings.repeat;
+        if (settings.repeat) {
+            repeatCountContainer.style.display = 'block';
+        } else {
+            repeatCountContainer.style.display = 'none';
+        }
+
+        const repeatVal = settings.repeatCount === Infinity ? 0 : settings.repeatCount;
+        repeatCountInput.value = repeatVal;
+        
+        alarmVolumeSlider.value = settings.volume;
+        alarmVolumeLabel.textContent = `${settings.volume}%`;
+        
+        alarmDurationInput.value = settings.alarmDuration;
+    }
+
+    timerSettingsBtn.onclick = openTimerSettings;
+    closeTimerSettingsBtn.onclick = closeTimerSettings;
+    timerSettingsModal.onclick = (e) => {
+        if (e.target === timerSettingsModal) {
+            closeTimerSettings();
+        }
+    };
+
+    repeatToggle.onchange = (e) => {
+        timers[activeTimerIdx].settings.repeat = e.target.checked;
+        // Reset lap count if repeat is turned off
+        if (!e.target.checked) {
+            timers[activeTimerIdx].lap = 1;
+        }
+        populateTimerSettings();
+        updateTimerDisplay();
+        saveTimers();
+    };
+
+    repeatCountInput.onchange = (e) => {
+        let count = parseInt(e.target.value, 10);
+        if (isNaN(count) || count < 0) {
+            count = 0; // Default to infinity
+        }
+        timers[activeTimerIdx].settings.repeatCount = (count === 0) ? Infinity : count;
+        updateTimerDisplay();
+        saveTimers();
+    };
+
+    alarmVolumeSlider.oninput = (e) => {
+        const volume = e.target.value;
+        timers[activeTimerIdx].settings.volume = volume;
+        alarmVolumeLabel.textContent = `${volume}%`;
+        saveTimers();
+    };
+
+    alarmDurationInput.onchange = (e) => {
+        let duration = parseInt(e.target.value, 10);
+        if (isNaN(duration) || duration < 1) {
+            duration = 1; // Minimum 1 second
+        }
+        timers[activeTimerIdx].settings.alarmDuration = duration;
+        e.target.value = duration; // Correct input if invalid
+        saveTimers();
+    };
     
     // --- Calendar Logic ---
     const calendarDays = document.getElementById('calendarDays');
